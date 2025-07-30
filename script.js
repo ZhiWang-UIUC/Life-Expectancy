@@ -64,10 +64,10 @@ function renderOverview() {
 
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // metric 固定为 life_expectancy
+  // metric = life_expectancy
   parameters.selectedMetric = 'life_expectancy';
 
-  // 获取前5个国家
+  // first 5 countries
   const countryList = [...new Set(dataGlobal
     .filter(d => d.status === parameters.selectedStatus)
     .map(d => d.country))].slice(0, 5);
@@ -145,45 +145,41 @@ function renderOverview() {
     .style("font-size", "10px")
     .text(d => d.country);
 
-  // === Annotations: select first 3 to annotate ===
-  const annotatedCountries = dataByCountry.slice(0, 3);
+  // === Annotations ===
+  const annotatedCountries = dataByCountry.slice(0, 5);
 
-  const annotations = annotatedCountries.map(([country, values], index) => {
-    const lastPoint = values
-      .filter(d => !isNaN(d.life_expectancy))
-      .sort((a, b) => b.year - a.year)[0];
+  const annotations = annotatedCountries.map(([country, values], i) => {
+  const first = values.find(d => d.year === parameters.yearRange[0]);
+  const last = values.slice().reverse().find(d => d.year === parameters.yearRange[1]);
 
-    if (!lastPoint) return null;
+  if (!first || !last || isNaN(first.life_expectancy) || isNaN(last.life_expectancy)) return null;
 
-    const dx = 30 + index * 20;
-    const dy = -30 - index * 15;
+  const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
+  const dx = 100 + (i * 60);
+  const dy = -30 - (i * 20);
 
-    return {
-      note: {
-        title: country,
-        label: `${lastPoint.year}: ${lastPoint.life_expectancy.toFixed(1)} yrs`,
-        wrap: 100,
-        padding: 2
-      },
-      data: lastPoint,
-      dx: dx,
-      dy: dy,
-      subject: { radius: 3 }
-    };
-  }).filter(d => d !== null);
+  return {
+    note: {
+      title: country,
+      label: `${first.year} → ${last.year}: +${delta} yrs`,
+      wrap: 100
+    },
+    x: x(last.year),
+    y: y(last.life_expectancy),
+    dx: dx,
+    dy: dy
+  };
+}).filter(d => d !== null);
+
 
   const makeAnnotations = d3.annotation()
-    .type(d3.annotationCalloutCircle)
-    .accessors({
-      x: d => x(d.year),
-      y: d => y(d.life_expectancy)
-    })
-    .annotations(annotations);
+  .type(d3.annotationLabel)
+  .annotations(annotations);
 
-  g.append("g")
-    .attr("class", "annotation-group")
-    .call(makeAnnotations);
-}
+g.append("g")
+  .attr("class", "annotation-group")
+  .call(makeAnnotations);
+
 
 
 
