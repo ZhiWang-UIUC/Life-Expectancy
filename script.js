@@ -145,60 +145,65 @@ function renderOverview() {
     .style("font-size", "10px")
     .text(d => d.country);
 
-  // === Annotations: select first 3 to annotate ===
-  const annotatedCountries = dataByCountry.slice(0, 5);
+ // 智能选择注释国家（取变化最大的前3个）
+const deltas = dataByCountry.map(([country, values]) => {
+  const sorted = values.filter(d => !isNaN(d.life_expectancy)).sort((a, b) => a.year - b.year);
+  if (sorted.length < 2) return null;
+  const delta = sorted[sorted.length - 1].life_expectancy - sorted[0].life_expectancy;
+  return { country, delta: Math.abs(delta), values: sorted };
+}).filter(d => d !== null);
+
+// 选变化最多的前三个国家
+const topAnnotations = deltas.sort((a, b) => b.delta - a.delta).slice(0, 3);
+
+// 生成 annotation 
+const annotations = topAnnotations.map((d, i) => {
+  const first = d.values[0];
+  const last = d.values[d.values.length - 1];
+  const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
+  const trend = delta >= 0 ? "increased" : "decreased";
+
+  // 动态偏移 - 保证每个注释位置略有不同
+  const dx = 50;
+  const dy = 30 + i * 50; // 分散高度，避免重叠
+
+  return {
+    note: {
+      title: d.country,
+      label: `Life expectancy ${trend} by ${Math.abs(delta)} yrs\n(${first.year} → ${last.year})`,
+      wrap: 160,
+      padding: 3,
+      align: "left"
+    },
+    data: last,
+    dx,
+    dy,
+    subject: { radius: 3 }
+  };
+});
+
+// 创建并绘制 annotation
+const makeAnnotations = d3.annotation()
+  .type(d3.annotationCalloutElbow)  // 使用 elbow（折线指向），比圆圈更清晰
+  .accessors({
+    x: d => x(d.year),
+    y: d => y(d.life_expectancy)
+  })
+  .accessorsInverse({
+    year: d => x.invert(d.x),
+    life_expectancy: d => y.invert(d.y)
+  })
+  .annotations(annotations);
+
+// 添加到图中
+g.append("g")
+  .attr("class", "annotation-group")
+  .call(makeAnnotations);
 
 
-    const annotations = annotatedCountries.map(([country, values], index) => {
-    // 按时间排序
-    const sorted = values
-      .filter(d => !isNaN(d.life_expectancy))
-      .sort((a, b) => a.year - b.year);
-    
-    if (sorted.length < 2) return null;
-    
-    const first = sorted[0];
-    const last = sorted[sorted.length - 1];
-    
-    const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
-    const trend = delta >= 0 ? "increased" : "decreased";
-    
-    // 动态偏移
-    const dx = 40;
-    const dy = -40 + index * -30;
-    
-    return {
-      note: {
-        title: country,
-        label: `Life Expectancy ${trend} by ${Math.abs(delta)} yrs from ${first.year} to ${last.year}`,
-        wrap: 140,
-        padding: 3
-      },
-      data: last,
-      dx,
-      dy,
-      subject: { radius: 3 }
-    };
-    }).filter(d => d !== null);
 
 
-  const makeAnnotations = d3.annotation()
-    .type(d3.annotationCalloutCircle)
-    .accessors({
-      x: d => x(d.year),
-      y: d => y(d.life_expectancy)
-    })
-    .annotations(annotations);
-
-  g.append("g")
-    .attr("class", "annotation-group")
-    .call(makeAnnotations);
 }
-
-
-
-
-
 
 
 
