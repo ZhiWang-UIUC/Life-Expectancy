@@ -88,10 +88,10 @@ function renderOverview() {
     .domain(parameters.yearRange)
     .range([0, plotWidth]);
 
-  const y = d3.scaleLinear()
-    .domain(d3.extent(filtered, d => d.life_expectancy))
-    .nice()
-    .range([plotHeight, 0]);
+ const y = d3.scaleLinear()
+  .domain([d3.min(filtered, d => d.life_expectancy), d3.max(filtered, d => d.life_expectancy) + 3])
+  .range([plotHeight, 0]);
+
 
   // 添加 x 轴
   const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
@@ -151,21 +151,23 @@ function renderOverview() {
 
   // === Annotation 添加 ===
   const annotations = dataByCountry.slice(0, 5)
-    .map(([country, values]) => {
-      const lastPoint = values.find(d => d.year === parameters.yearRange[1]);
-      if (!lastPoint) return null; // 防止数据缺失
-      return {
-        note: {
-          title: country,
-          label: `Life Expectancy in ${parameters.yearRange[1]}: ${lastPoint.life_expectancy.toFixed(1)}`
-        },
-        data: lastPoint,
-        dx: 10,
-        dy: -25,
-        subject: { radius: 4 }
-      };
-    })
-    .filter(d => d !== null); // 过滤掉 null
+  .map(([country, values]) => {
+    const lastPoint = values.slice().reverse().find(d => d.life_expectancy);
+    if (!lastPoint) return null;
+    return {
+      note: {
+        title: country,
+        label: `Life Expectancy: ${lastPoint.life_expectancy.toFixed(1)}`
+      },
+      data: lastPoint,
+      dx: lastPoint.year > (parameters.yearRange[0] + parameters.yearRange[1]) / 2 ? -40 : 10,
+      dy: lastPoint.life_expectancy > 70 ? -30 : 20,
+      subject: { radius: 4 }
+    };
+
+  })
+  .filter(d => d !== null);
+
 
   const makeAnnotations = d3.annotation()
     .type(d3.annotationCalloutCircle)
