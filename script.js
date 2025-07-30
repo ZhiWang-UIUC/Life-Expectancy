@@ -146,41 +146,47 @@ function renderOverview() {
     .style("font-size", "10px")
     .text(d => d.country);
 
-  // === Annotation（label模板 + delta展示） ===
-  const annotatedCountries = dataByCountry.slice(0, 3);
+  // === Annotation
+  // === Annotation
+const annotatedCountries = dataByCountry.slice(0, 5); 
 
-  const annotations = annotatedCountries.map(([country, values], i) => {
-    const first = values.find(d => d.year === parameters.yearRange[0]);
-    const last = values.slice().reverse().find(d => d.year === parameters.yearRange[1]);
+const annotations = annotatedCountries.map(([country, values], i) => {
+  const first = values.find(d => d.year === parameters.yearRange[0]);
+  const last = values.slice().reverse().find(d => d.year === parameters.yearRange[1]);
 
-    if (!first || !last || isNaN(first.life_expectancy) || isNaN(last.life_expectancy)) return null;
+  if (!first || !last || isNaN(first.life_expectancy) || isNaN(last.life_expectancy)) return null;
 
-    const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
-    const dx = 100 + (i * 50);
-    const dy = -40 - (i * 30);
+  const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
 
-    return {
-      note: {
-        title: country,
-        label: `${first.year} → ${last.year}: +${delta} yrs`,
-        wrap: 120,
-        padding: 2
-      },
-      x: x(last.year),
-      y: y(last.life_expectancy),
-      dx: dx,
-      dy: dy
-    };
-  }).filter(d => d !== null);
+  return {
+    note: {
+      title: `${country}`,
+      label: `From ${first.year} to ${last.year},\n+${delta} years in Life Expectancy`,
+      wrap: 120,
+      padding: 4,
+      align: "middle"
+    },
+    x: x(last.year),
+    y: y(last.life_expectancy),
+    dx: 40 + (i % 2) * 80,
+    dy: -30 - (i * 25),
+    subject: { radius: 3 }
+  };
+}).filter(d => d !== null);
 
-  const makeAnnotations = d3.annotation()
-    .type(d3.annotationLabel)
-    .annotations(annotations);
+// === create annotation
+const makeAnnotations = d3.annotation()
+  .type(d3.annotationLabel)
+  .annotations(annotations);
 
-  g.append("g")
-    .attr("class", "annotation-group")
-    .call(makeAnnotations);
+// === add to canvas
+g.append("g")
+  .attr("class", "annotation-group")
+  .style("font-size", "11px") // 设置字体大小
+  .call(makeAnnotations);
+
   console.log("Overview rendered with", annotations.length, "annotations");
+  console.log("Annotations:", annotations.length);
 
   
 }
