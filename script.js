@@ -1,8 +1,17 @@
+// === Global Variables ===
 let currentScene = 0;
 let dataGlobal = null;
 
+// Parameter object to track visualization state
+let parameters = {
+  selectedStatus: "Developed",  // "Developed", "Developing"
+  selectedMetric: "life_expectancy",  // Could be gdp, alcohol, etc.
+  yearRange: [2000, 2015],
+  selectedCountries: [] // dynamically updated
+};
+
+// === Load CSV Data ===
 d3.csv("data/life_expectancy_cleaned.csv").then(data => {
-  // 转换字段
   data.forEach(d => {
     d.year = +d.year;
     d.life_expectancy = +d.life_expectancy;
@@ -11,39 +20,34 @@ d3.csv("data/life_expectancy_cleaned.csv").then(data => {
     d.hiv_aids = +d.hiv_aids;
     d.population = +d.population;
     d.schooling = +d.schooling;
-    d.status = d.status; // 保留 status 字段作为字符串
   });
-
   dataGlobal = data;
+  updateSelectedCountries();
   renderScene(currentScene);
-}).catch(err => {
-  console.error("加载数据失败", err);
 });
 
+function updateSelectedCountries() {
+  const countries = [...new Set(dataGlobal
+    .filter(d => d.status === parameters.selectedStatus)
+    .map(d => d.country))];
+  parameters.selectedCountries = countries.slice(0, 5); // max 5
+}
+
+// === Scene Dispatcher ===
 function renderScene(scene) {
   d3.select("#viz").selectAll("*").remove();
   d3.select("#narrative").html("");
-
-  if (!dataGlobal) {
-    d3.select("#narrative").text("数据还没加载完成，请稍候...");
-    return;
-  }
-
-  if(scene === 0) {
-    renderOverview();
-  } else if(scene === 1) {
-    renderGDPImpact();  
-  } else if(scene === 2) {
-    renderUserExplore();       
-  }
+  if (!dataGlobal) return;
+  if (scene === 0) renderOverview();
+  else if (scene === 1) renderScene2();
+  else if (scene === 2) renderScene3();
 }
 
-
-// Scene 0: 概览 — Country vs Life Expectancy 
+// === Scene 1 ===
 function renderOverview() {
   d3.select("#narrative").html(`
-    <h2>Global Life Expectancy Trends (2000–2015)</h2>
-    <p>This scene compares life expectancy trends between developed and developing countries. Developed countries tend to have consistently higher life expectancy with slower growth, while developing countries show faster improvements over time.</p>
+    <h2>Life Expectancy Trend (${parameters.selectedStatus} Countries)</h2>
+    <p>This chart shows how ${parameters.selectedStatus.toLowerCase()} countries have changed in terms of ${parameters.selectedMetric.replace("_", " ")} from ${parameters.yearRange[0]} to ${parameters.yearRange[1]}.</p>
   `);
 
   const svg = d3.select("#viz");
@@ -55,32 +59,23 @@ function renderOverview() {
 
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // 自动选出前5个 Developed 和 Developing 国家
-  const developedCountries = [...new Set(dataGlobal.filter(d => d.status === "Developed").map(d => d.country))].slice(0, 5);
-  const developingCountries = [...new Set(dataGlobal.filter(d => d.status === "Developing").map(d => d.country))].slice(0, 5);
-  const selectedCountries = [...developedCountries, ...developingCountries];
-
   const filtered = dataGlobal.filter(d =>
-    selectedCountries.includes(d.country) &&
-    d.year >= 2000 && d.year <= 2015 &&
-    d.life_expectancy > 0
+    parameters.selectedCountries.includes(d.country) &&
+    d.year >= parameters.yearRange[0] && d.year <= parameters.yearRange[1] &&
+    !isNaN(d[parameters.selectedMetric])
   );
 
   const dataByCountry = d3.groups(filtered, d => d.country);
 
-  // X轴：年份
   const x = d3.scaleLinear()
-    .domain([2000, 2015])
+    .domain(parameters.yearRange)
     .range([0, plotWidth]);
 
-  const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
-
-  // Y轴：寿命
   const y = d3.scaleLinear()
-    .domain(d3.extent(filtered, d => d.life_expectancy))
-    .nice()
+    .domain(d3.extent(filtered, d => d[parameters.selectedMetric])).nice()
     .range([plotHeight, 0]);
 
+  const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
   const yAxis = d3.axisLeft(y);
 
   g.append("g")
@@ -101,68 +96,68 @@ function renderOverview() {
     .attr("y", -50)
     .attr("fill", "black")
     .attr("text-anchor", "middle")
-    .text("Life Expectancy");
+    .text(parameters.selectedMetric.replace("_", " "));
 
   const line = d3.line()
     .x(d => x(d.year))
-    .y(d => y(d.life_expectancy));
+    .y(d => y(d[parameters.selectedMetric]));
 
-  // 颜色区分 Developed / Developing
-  const color = d => d.status === "Developed" ? "#1f77b4" : "#ff7f0e";
+  const color = d3.scaleOrdinal(d3.schemeCategory10);
 
   g.selectAll(".line")
     .data(dataByCountry)
     .enter()
     .append("path")
     .attr("fill", "none")
-    .attr("stroke", ([country, values]) => color(values[0]))
+    .attr("stroke", ([country]) => color(country))
     .attr("stroke-width", 2)
     .attr("d", ([, values]) => line(values));
 
-  // 添加图例
-  const legend = svg.append("g")
-    .attr("transform", `translate(${width - margin.right + 20}, ${margin.top})`);
-
-  legend.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 6).style("fill", "#1f77b4");
-  legend.append("text").attr("x", 12).attr("y", 5).text("Developed").style("font-size", "13px");
-
-  legend.append("circle").attr("cx", 0).attr("cy", 25).attr("r", 6).style("fill", "#ff7f0e");
-  legend.append("text").attr("x", 12).attr("y", 30).text("Developing").style("font-size", "13px");
-
-  // 注释（用 d3-annotation）
+  // Annotation (1 example)
+  const exampleCountry = dataByCountry[0][0];
+  const latestData = dataByCountry[0][1].find(d => d.year === parameters.yearRange[1]);
   const annotations = [
     {
       note: {
-        title: "Developed Country",
-        label: "Germany shows high life expectancy, stable over time"
+        title: exampleCountry,
+        label: `${parameters.selectedMetric.replace("_", " ")} in ${parameters.yearRange[1]} was ${latestData[parameters.selectedMetric].toFixed(1)}`
       },
-      data: dataByCountry.find(([c]) => c === developedCountries[0])[1].find(d => d.year == 2015),
-      dx: 20,
-      dy: -40,
-      subject: { radius: 4 }
-    },
-    {
-      note: {
-        title: "Developing Country",
-        label: "Nigeria shows lower but improving life expectancy"
-      },
-      data: dataByCountry.find(([c]) => c === developingCountries[0])[1].find(d => d.year == 2015),
-      dx: 20,
-      dy: -40,
-      subject: { radius: 4 }
+      x: x(latestData.year),
+      y: y(latestData[parameters.selectedMetric]),
+      dy: -30,
+      dx: 30
     }
   ];
 
   const makeAnnotations = d3.annotation()
     .type(d3.annotationCalloutCircle)
-    .accessors({
-      x: d => x(d.year),
-      y: d => y(d.life_expectancy)
-    })
     .annotations(annotations);
 
-  g.append("g").attr("class", "annotation-group").call(makeAnnotations);
+  g.append("g").call(makeAnnotations);
 }
+
+// === UI Triggers ===
+d3.select("#statusSelect").on("change", function() {
+  parameters.selectedStatus = this.value;
+  updateSelectedCountries();
+  renderScene(currentScene);
+});
+
+d3.select("#metricSelect").on("change", function() {
+  parameters.selectedMetric = this.value;
+  renderScene(currentScene);
+});
+
+d3.select("#nextBtn").on("click", function() {
+  currentScene = Math.min(currentScene + 1, 2);
+  renderScene(currentScene);
+});
+
+d3.select("#prevBtn").on("click", function() {
+  currentScene = Math.max(currentScene - 1, 0);
+  renderScene(currentScene);
+});
+
 
 
 
