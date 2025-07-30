@@ -69,7 +69,7 @@ function renderOverview() {
 
   // 获取筛选后的国家列表（前5个）
   const countryList = [...new Set(dataGlobal
-    .filter(d => parameters.selectedStatus === "all" || d.status === parameters.selectedStatus)
+    .filter(d => d.status === parameters.selectedStatus)
     .map(d => d.country))].slice(0, 5);
 
   parameters.selectedCountries = countryList;
@@ -150,23 +150,29 @@ function renderOverview() {
     .text(d => d.country);
 
   // === Annotation 添加 ===
-  const annotations = dataByCountry.slice(0, 5)
-  .map(([country, values]) => {
-    const lastPoint = values.slice().reverse().find(d => d.life_expectancy);
-    if (!lastPoint) return null;
-    return {
-      note: {
-        title: country,
-        label: `Life Expectancy: ${lastPoint.life_expectancy.toFixed(1)}`
-      },
-      data: lastPoint,
-      dx: lastPoint.year > (parameters.yearRange[0] + parameters.yearRange[1]) / 2 ? -40 : 10,
-      dy: lastPoint.life_expectancy > 70 ? -30 : 20,
-      subject: { radius: 4 }
-    };
+  const annotations = dataByCountry.slice(0, 3).map(([country, values]) => {
+  const lastPoint = values
+    .filter(d => !isNaN(d.life_expectancy))
+    .sort((a, b) => b.year - a.year)[0];
+  if (!lastPoint) return null;
 
-  })
-  .filter(d => d !== null);
+  const dx = lastPoint.year > (parameters.yearRange[0] + parameters.yearRange[1]) / 2 ? -40 : 20;
+  const dy = lastPoint.life_expectancy > 70 ? -30 : 20;
+
+  return {
+    note: {
+      title: country,
+      label: `${lastPoint.year}: ${lastPoint.life_expectancy.toFixed(1)} yrs`,
+      wrap: 120,
+      padding: 3
+    },
+    data: lastPoint,
+    dx: dx,
+    dy: dy,
+    subject: { radius: 3 }
+  };
+}).filter(d => d !== null);
+
 
 
   const makeAnnotations = d3.annotation()
