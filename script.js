@@ -180,6 +180,9 @@ function renderOverview() {
   g.append("g")
     .attr("class", "annotation-group")
     .call(makeAnnotations);
+  console.log("Overview rendered with", annotations.length, "annotations");
+
+  
 }
 
 
