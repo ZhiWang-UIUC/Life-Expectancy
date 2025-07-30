@@ -145,60 +145,55 @@ function renderOverview() {
     .style("font-size", "10px")
     .text(d => d.country);
 
- // 智能选择注释国家（取变化最大的前3个）
-const deltas = dataByCountry.map(([country, values]) => {
-  const sorted = values.filter(d => !isNaN(d.life_expectancy)).sort((a, b) => a.year - b.year);
-  if (sorted.length < 2) return null;
-  const delta = sorted[sorted.length - 1].life_expectancy - sorted[0].life_expectancy;
-  return { country, delta: Math.abs(delta), values: sorted };
-}).filter(d => d !== null);
+ // 选出寿命前5国家（按最后一年寿命排序）
+const topCountries = dataByCountry
+  .map(([country, values]) => {
+    const lastValid = values
+      .filter(d => !isNaN(d.life_expectancy))
+      .sort((a, b) => b.year - a.year)[0]; // 最新年
+    return {
+      country,
+      year: lastValid?.year,
+      value: lastValid?.life_expectancy,
+      point: lastValid
+    };
+  })
+  .filter(d => d.point && !isNaN(d.value))
+  .sort((a, b) => b.value - a.value)  // 高 → 低
+  .slice(0, 5);
 
-// 选变化最多的前三个国家
-const topAnnotations = deltas.sort((a, b) => b.delta - a.delta).slice(0, 3);
+// 固定位置 dy 值，从最上到最下：值越大位置越上
+const dyPositions = [-80, -40, 0, 40, 80];
 
-// 生成 annotation 
-const annotations = topAnnotations.map((d, i) => {
-  const first = d.values[0];
-  const last = d.values[d.values.length - 1];
-  const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
-  const trend = delta >= 0 ? "increased" : "decreased";
-
-  // 动态偏移 - 保证每个注释位置略有不同
-  const dx = 50;
-  const dy = 30 + i * 50; // 分散高度，避免重叠
-
+const annotations = topCountries.map((d, i) => {
   return {
     note: {
       title: d.country,
-      label: `Life expectancy ${trend} by ${Math.abs(delta)} yrs\n(${first.year} → ${last.year})`,
-      wrap: 160,
+      label: `Life Expectancy in ${d.year}: ${d.value.toFixed(1)}`,
+      wrap: 140,
       padding: 3,
       align: "left"
     },
-    data: last,
-    dx,
-    dy,
+    data: d.point,
+    dx: 60, // 所有注释向右偏移
+    dy: dyPositions[i],
     subject: { radius: 3 }
   };
 });
 
-// 创建并绘制 annotation
+// 调用 annotation
 const makeAnnotations = d3.annotation()
-  .type(d3.annotationCalloutElbow)  // 使用 elbow（折线指向），比圆圈更清晰
+  .type(d3.annotationCalloutElbow)
   .accessors({
     x: d => x(d.year),
     y: d => y(d.life_expectancy)
   })
-  .accessorsInverse({
-    year: d => x.invert(d.x),
-    life_expectancy: d => y.invert(d.y)
-  })
   .annotations(annotations);
 
-// 添加到图中
 g.append("g")
   .attr("class", "annotation-group")
   .call(makeAnnotations);
+
 
 
 
