@@ -148,10 +148,15 @@ function renderOverview() {
 
 const numAnnotations = 5;
 const annotationX = width - margin.right + 30;
-const annotationTop = margin.top + 10;
-const annotationBottom = height - margin.bottom - 10;
 
-// 取变化最大的前 5 个国家
+// 设定注释绘图区域的上边界和下边界
+const annotationTop = margin.top + 20;
+const annotationBottom = height - margin.bottom - 20;
+const annotationAreaHeight = annotationBottom - annotationTop;
+
+// spacing 缩小一些，避免最后一个注释超出画布
+const annotationSpacing = Math.min(60, annotationAreaHeight / (numAnnotations - 1));
+
 const topDeltaCountries = dataByCountry
   .map(([country, values]) => {
     const sorted = values
@@ -171,13 +176,8 @@ const topDeltaCountries = dataByCountry
   })
   .filter(d => d !== null)
   .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
-  .slice(0, numAnnotations);
-
-// 对最后的数据按 life_expectancy 从高到低排序
-topDeltaCountries.sort((a, b) => b.last.life_expectancy - a.last.life_expectancy);
-
-// 分配 annotation 的 Y 坐标（从上往下排，等距）
-const annotationSpacing = (annotationBottom - annotationTop) / (numAnnotations - 1);
+  .slice(0, numAnnotations)
+  .sort((a, b) => b.last.life_expectancy - a.last.life_expectancy); // 按尾值从高到低排列
 
 const annotations = topDeltaCountries.map((d, i) => {
   const fixedY = annotationTop + i * annotationSpacing;
@@ -185,7 +185,7 @@ const annotations = topDeltaCountries.map((d, i) => {
     note: {
       title: d.country,
       label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta).toFixed(1)} yrs\nfrom ${d.first.year} to ${d.last.year}`,
-      wrap: 160,
+      wrap: 150,
       align: "left",
       padding: 3,
       x: annotationX,
@@ -197,9 +197,6 @@ const annotations = topDeltaCountries.map((d, i) => {
     subject: { radius: 3 }
   };
 });
-
-
-
 
 
 // 调用 annotation
