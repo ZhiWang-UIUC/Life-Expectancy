@@ -1,0 +1,32 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+  }
+  
+  #container {
+    display: flex;
+    gap: 20px;
+  }
+  
+  #narrative {
+    flex: 1;
+    max-width: 300px;
+    padding: 10px;
+    border-right: 2px solid #ccc;
+  }
+  
+  #visualization {
+    flex: 2;
+  }
+  
+  #controls {
+    margin-top: 20px;
+  }
+  
+  button {
+    padding: 8px 16px;
+    margin-right: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  

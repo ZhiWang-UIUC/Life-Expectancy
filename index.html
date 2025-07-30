@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Life Expectancy Narrative Visualization</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="container">
+    <div id="narrative">
+      <!-- 这里放故事文本 -->
+    </div>
+    <div id="visualization">
+      <svg id="viz" width="700" height="500"></svg>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button id="prev">Previous</button>
+    <button id="next">Next</button>
+  </div>
+
+  <!-- 引入 d3 和其他库，推荐用 CDN，方便 -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-annotation@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+
+  <!-- 你的主脚本 -->
+  <script src="script.js"></script>
+</body>
+</html>
