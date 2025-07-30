@@ -146,6 +146,7 @@ function renderOverview() {
     .text(d => d.country);
 
  // 选出寿命前5国家（按最后一年寿命排序）
+// 选出寿命前5国家（按最后一年寿命排序）
 const topCountries = dataByCountry
   .map(([country, values]) => {
     const lastValid = values
