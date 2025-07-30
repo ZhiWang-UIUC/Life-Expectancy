@@ -148,29 +148,39 @@ function renderOverview() {
   // === Annotations: select first 3 to annotate ===
   const annotatedCountries = dataByCountry.slice(0, 5);
 
-  const annotations = annotatedCountries.map(([country, values], index) => {
-    const lastPoint = values
+
+    const annotations = annotatedCountries.map(([country, values], index) => {
+    // 按时间排序
+    const sorted = values
       .filter(d => !isNaN(d.life_expectancy))
-      .sort((a, b) => b.year - a.year)[0];
-
-    if (!lastPoint) return null;
-
-    const dx = 30 + index * 20;
-    const dy = -30 - index * 15;
-
+      .sort((a, b) => a.year - b.year);
+    
+    if (sorted.length < 2) return null;
+    
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    
+    const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
+    const trend = delta >= 0 ? "increased" : "decreased";
+    
+    // 动态偏移
+    const dx = 40;
+    const dy = -40 + index * -30;
+    
     return {
       note: {
         title: country,
-        label: `${lastPoint.year}: ${lastPoint.life_expectancy.toFixed(1)} yrs`,
-        wrap: 100,
-        padding: 2
+        label: `Life Expectancy ${trend} by ${Math.abs(delta)} yrs from ${first.year} to ${last.year}`,
+        wrap: 140,
+        padding: 3
       },
-      data: lastPoint,
-      dx: dx,
-      dy: dy,
+      data: last,
+      dx,
+      dy,
       subject: { radius: 3 }
     };
-  }).filter(d => d !== null);
+    }).filter(d => d !== null);
+
 
   const makeAnnotations = d3.annotation()
     .type(d3.annotationCalloutCircle)
