@@ -64,9 +64,10 @@ function renderOverview() {
 
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // === 数据准备 ===
+  // metric 固定为 life_expectancy
   parameters.selectedMetric = 'life_expectancy';
 
+  // 获取前5个国家
   const countryList = [...new Set(dataGlobal
     .filter(d => d.status === parameters.selectedStatus)
     .map(d => d.country))].slice(0, 5);
@@ -81,7 +82,6 @@ function renderOverview() {
 
   const dataByCountry = d3.groups(filtered, d => d.country);
 
-  // === scales ===
   const x = d3.scaleLinear()
     .domain(parameters.yearRange)
     .range([0, plotWidth]);
@@ -116,12 +116,11 @@ function renderOverview() {
     .attr("text-anchor", "middle")
     .text("Life Expectancy");
 
-  // === draw lines ===
   const line = d3.line()
     .x(d => x(d.year))
     .y(d => y(d.life_expectancy));
 
-  const color = d3.scaleOrdinal(d3.schemeTableau10).domain(countryList);
+  const color = d3.scaleOrdinal(d3.schemeCategory10).domain(countryList);
 
   g.selectAll(".line")
     .data(dataByCountry)
@@ -146,48 +145,46 @@ function renderOverview() {
     .style("font-size", "10px")
     .text(d => d.country);
 
-  // === Annotation
-  // === Annotation
-/*
-const annotatedCountries = dataByCountry.slice(0, 5); 
+  // === Annotations: select first 3 to annotate ===
+  const annotatedCountries = dataByCountry.slice(0, 5);
 
-const annotations = annotatedCountries.map(([country, values], i) => {
-  const first = values.find(d => d.year === parameters.yearRange[0]);
-  const last = values.slice().reverse().find(d => d.year === parameters.yearRange[1]);
+  const annotations = annotatedCountries.map(([country, values], index) => {
+    const lastPoint = values
+      .filter(d => !isNaN(d.life_expectancy))
+      .sort((a, b) => b.year - a.year)[0];
 
-  if (!first || !last || isNaN(first.life_expectancy) || isNaN(last.life_expectancy)) return null;
+    if (!lastPoint) return null;
 
-  const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
+    const dx = 30 + index * 20;
+    const dy = -30 - index * 15;
 
-  return {
-    note: {
-      title: `${country}`,
-      label: `From ${first.year} to ${last.year},\n+${delta} years in Life Expectancy`,
-      wrap: 120,
-      padding: 4,
-      align: "middle"
-    },
-    x: x(last.year),
-    y: y(last.life_expectancy),
-    dx: 40 + (i % 2) * 80,
-    dy: -30 - (i * 25),
-    subject: { radius: 3 }
-  };
-}).filter(d => d !== null);
+    return {
+      note: {
+        title: country,
+        label: `${lastPoint.year}: ${lastPoint.life_expectancy.toFixed(1)} yrs`,
+        wrap: 100,
+        padding: 2
+      },
+      data: lastPoint,
+      dx: dx,
+      dy: dy,
+      subject: { radius: 3 }
+    };
+  }).filter(d => d !== null);
 
-// === create annotation
-const makeAnnotations = d3.annotation()
-  .type(d3.annotationLabel)
-  .annotations(annotations);
+  const makeAnnotations = d3.annotation()
+    .type(d3.annotationCalloutCircle)
+    .accessors({
+      x: d => x(d.year),
+      y: d => y(d.life_expectancy)
+    })
+    .annotations(annotations);
 
-// === add to canvas
-g.append("g")
-  .attr("class", "annotation-group")
-  .style("font-size", "11px") // 设置字体大小
-  .call(makeAnnotations);
-
-  */
+  g.append("g")
+    .attr("class", "annotation-group")
+    .call(makeAnnotations);
 }
+
 
 
 
