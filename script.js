@@ -39,47 +39,62 @@ function renderScene(scene) {
 // Scene 0: 概览 — GDP vs Life Expectancy 散点图
 function renderOverview() {
   d3.select("#narrative").html(`
-    <h2>Global Life Expectancy Overview</h2>
-    <p>This scatter plot shows the relationship between GDP and Life Expectancy across countries.</p>
+    <h2>Life Expectancy Trends Over Time</h2>
+    <p>This scene shows how life expectancy has evolved from 2000 to 2015 for a selection of representative countries.</p>
   `);
 
   const svg = d3.select("#viz");
   const width = +svg.attr("width");
   const height = +svg.attr("height");
-  const margin = {top: 50, right: 40, bottom: 60, left: 70};
+  const margin = {top: 50, right: 100, bottom: 60, left: 70};
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // 过滤掉无效数据
-  const filtered = dataGlobal.filter(d => d.gdp > 0 && d.life_expectancy > 0);
+  // 选定几个国家代表不同发展水平
+  const selectedCountries = ["United States", "China", "India", "Germany", "Nigeria"];
 
-  // X 轴 — GDP 取对数尺度
-  const x = d3.scaleLog()
-    .domain(d3.extent(filtered, d => d.gdp))
-    .range([0, plotWidth])
-    .nice();
+  // 按国家分组
+  const dataByCountry = d3.groups(
+    dataGlobal.filter(d =>
+      selectedCountries.includes(d.country) &&
+      d.year >= 2000 && d.year <= 2015 && d.life_expectancy > 0
+    ),
+    d => d.country
+  );
 
-  // Y 轴 — Life Expectancy 线性尺度
+  // X轴: 年份
+  const x = d3.scaleLinear()
+    .domain([2000, 2015])
+    .range([0, plotWidth]);
+
+  const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
+
+  // Y轴: 寿命
   const y = d3.scaleLinear()
-    .domain(d3.extent(filtered, d => d.life_expectancy))
-    .range([plotHeight, 0])
-    .nice();
+    .domain([
+      d3.min(dataByCountry, ([, values]) => d3.min(values, d => d.life_expectancy)),
+      d3.max(dataByCountry, ([, values]) => d3.max(values, d => d.life_expectancy))
+    ])
+    .nice()
+    .range([plotHeight, 0]);
 
-  // 绘制坐标轴
+  const yAxis = d3.axisLeft(y);
+
+  // 添加坐标轴
   g.append("g")
     .attr("transform", `translate(0,${plotHeight})`)
-    .call(d3.axisBottom(x).ticks(10, "~s"))
+    .call(xAxis)
     .append("text")
     .attr("x", plotWidth / 2)
     .attr("y", 40)
     .attr("fill", "black")
     .attr("text-anchor", "middle")
-    .text("GDP (log scale)");
+    .text("Year");
 
   g.append("g")
-    .call(d3.axisLeft(y))
+    .call(yAxis)
     .append("text")
     .attr("transform", "rotate(-90)")
     .attr("x", -plotHeight / 2)
@@ -88,37 +103,78 @@ function renderOverview() {
     .attr("text-anchor", "middle")
     .text("Life Expectancy");
 
-  // 绘制散点
-  g.selectAll("circle")
-    .data(filtered)
-    .enter()
-    .append("circle")
-    .attr("cx", d => x(d.gdp))
-    .attr("cy", d => y(d.life_expectancy))
-    .attr("r", 5)
-    .attr("fill", "steelblue")
-    .attr("opacity", 0.7)
-    .append("title")
-    .text(d => `${d.country}\nGDP: ${d.gdp}\nLife Expectancy: ${d.life_expectancy}`);
+  // 折线函数
+  const line = d3.line()
+    .x(d => x(+d.year))
+    .y(d => y(+d.life_expectancy));
 
-  // 可以加简单注释，示范用 d3-annotation
+  // 为每个国家画一条线
+  g.selectAll(".line")
+    .data(dataByCountry)
+    .enter()
+    .append("path")
+    .attr("class", "line")
+    .attr("fill", "none")
+    .attr("stroke", (_, i) => d3.schemeCategory10[i])
+    .attr("stroke-width", 2)
+    .attr("d", ([, values]) => line(values));
+
+  // 添加图例
+  const legend = svg.append("g")
+    .attr("transform", `translate(${width - margin.right + 20}, ${margin.top})`);
+
+  dataByCountry.forEach(([country], i) => {
+    const yOffset = i * 25;
+    legend.append("circle")
+      .attr("cx", 0)
+      .attr("cy", yOffset)
+      .attr("r", 6)
+      .attr("fill", d3.schemeCategory10[i]);
+
+    legend.append("text")
+      .attr("x", 12)
+      .attr("y", yOffset + 4)
+      .text(country)
+      .style("font-size", "13px");
+  });
+
+  // 添加注释（用 d3-annotation）
   const annotations = [
     {
-      note: { label: "Higher GDP generally associates with higher life expectancy" },
-      x: x(1e4),
-      y: y(75),
-      dy: -30,
-      dx: 30
+      note: {
+        label: "Germany shows stable high life expectancy",
+        title: "Developed Country"
+      },
+      data: dataByCountry.find(([c]) => c === "Germany")[1].find(d => d.year == 2015),
+      dy: -40,
+      dx: 20,
+      subject: { radius: 5 }
+    },
+    {
+      note: {
+        label: "Nigeria has lower life expectancy and slower growth",
+        title: "Developing Country"
+      },
+      data: dataByCountry.find(([c]) => c === "Nigeria")[1].find(d => d.year == 2015),
+      dy: -40,
+      dx: 20,
+      subject: { radius: 5 }
     }
   ];
 
   const makeAnnotations = d3.annotation()
+    .type(d3.annotationCalloutCircle)
+    .accessors({
+      x: d => x(d.year),
+      y: d => y(d.life_expectancy)
+    })
     .annotations(annotations);
 
   g.append("g")
     .attr("class", "annotation-group")
     .call(makeAnnotations);
 }
+
 
 // Scene 1: Alcohol Consumption Impact
 function renderAlcoholImpact() {
