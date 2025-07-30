@@ -148,10 +148,11 @@ function renderOverview() {
 
 // 取所有国家中数据完整的，按寿命变化量排序，选前5
 const numAnnotations = 5;
-const annotationX = plotWidth + 40; // 距离图表右边一定距离
-const annotationYSpacing = plotHeight / (numAnnotations + 1);
+const annotationAreaTop = margin.top + 10;
+const annotationAreaBottom = height - margin.bottom - 10;
+const annotationYSpacing = (annotationAreaBottom - annotationAreaTop) / (numAnnotations - 1);
+const annotationX = width - margin.right + 30; // 靠右偏移 30px
 
-// 选出最寿命变化最大的 5 个国家
 const topDeltaCountries = dataByCountry
   .map(([country, values]) => {
     const sorted = values
@@ -160,40 +161,39 @@ const topDeltaCountries = dataByCountry
     if (sorted.length < 2) return null;
     const first = sorted[0];
     const last = sorted[sorted.length - 1];
-    const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
+    const delta = last.life_expectancy - first.life_expectancy;
     return {
       country,
       first,
       last,
-      delta: +delta,
-      trend: +delta >= 0 ? "increased" : "decreased"
+      delta,
+      trend: delta >= 0 ? "increased" : "decreased"
     };
   })
   .filter(d => d !== null)
   .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
   .slice(0, numAnnotations);
 
-// 构造 annotation 对象（固定位置）
 const annotations = topDeltaCountries.map((d, i) => {
-  const anchorY = margin.top + (i + 1) * annotationYSpacing;
+  const fixedY = annotationAreaTop + i * annotationYSpacing;
+
   return {
     note: {
       title: d.country,
-      label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta)} yrs from ${d.first.year} to ${d.last.year}`,
+      label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta).toFixed(1)} yrs\nfrom ${d.first.year} to ${d.last.year}`,
       wrap: 160,
-      padding: 3,
       align: "left",
+      padding: 3,
       x: annotationX,
-      y: anchorY
+      y: fixedY
     },
-    data: d.last, // 连接的 anchor 点（线条）
-    subject: {
-      radius: 3
-    },
-    dx: 0,
-    dy: 0
+    data: d.last,
+    dx: annotationX - x(d.last.year),  // 自动从线尾连接到右侧注释
+    dy: fixedY - y(d.last.life_expectancy),
+    subject: { radius: 3 }
   };
 });
+
 
 
 
