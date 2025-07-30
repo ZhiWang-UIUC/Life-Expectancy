@@ -1,16 +1,14 @@
-// === Global Variables ===
+// === GLOBAL STATE ===
 let currentScene = 0;
 let dataGlobal = null;
-
-// Parameter object to track visualization state
 let parameters = {
-  selectedStatus: "Developed",  // "Developed", "Developing"
-  selectedMetric: "life_expectancy",  // Could be gdp, alcohol, etc.
+  selectedStatus: "Developed",
+  selectedMetric: "life_expectancy",
   yearRange: [2000, 2015],
-  selectedCountries: [] // dynamically updated
+  selectedCountries: []
 };
 
-// === Load CSV Data ===
+// === LOAD DATA ===
 d3.csv("data/life_expectancy_cleaned.csv").then(data => {
   data.forEach(d => {
     d.year = +d.year;
@@ -22,47 +20,68 @@ d3.csv("data/life_expectancy_cleaned.csv").then(data => {
     d.schooling = +d.schooling;
   });
   dataGlobal = data;
-  updateSelectedCountries();
+  renderScene(currentScene);
+}).catch(err => {
+  console.error("加载数据失败", err);
+});
+
+// === UI TRIGGERS ===
+d3.select("#statusSelect").on("change", function () {
+  parameters.selectedStatus = this.value;
   renderScene(currentScene);
 });
 
-function updateSelectedCountries() {
-  const countries = [...new Set(dataGlobal
-    .filter(d => d.status === parameters.selectedStatus)
-    .map(d => d.country))];
-  parameters.selectedCountries = countries.slice(0, 5); // max 5
-}
+d3.select("#metricSelect").on("change", function () {
+  parameters.selectedMetric = this.value;
+  renderScene(currentScene);
+});
 
-// === Scene Dispatcher ===
+// === SCENE CONTROL ===
 function renderScene(scene) {
   d3.select("#viz").selectAll("*").remove();
   d3.select("#narrative").html("");
-  if (!dataGlobal) return;
-  if (scene === 0) renderOverview();
-  else if (scene === 1) renderScene2();
-  else if (scene === 2) renderScene3();
+
+  if (!dataGlobal) {
+    d3.select("#narrative").text("数据还没加载完成，请稍候...");
+    return;
+  }
+
+  if (scene === 0) {
+    renderOverview();
+  } else if (scene === 1) {
+    renderAlcoholImpact();
+  } else if (scene === 2) {
+    renderHIVImpact();
+  }
 }
 
-// === Scene 1 ===
+// === SCENE 1: OVERVIEW ===
 function renderOverview() {
   d3.select("#narrative").html(`
-    <h2>Life Expectancy Trend (${parameters.selectedStatus} Countries)</h2>
-    <p>This chart shows how ${parameters.selectedStatus.toLowerCase()} countries have changed in terms of ${parameters.selectedMetric.replace("_", " ")} from ${parameters.yearRange[0]} to ${parameters.yearRange[1]}.</p>
+    <h2>Life Expectancy Trends: ${parameters.selectedStatus} Countries</h2>
+    <p>This scene shows the trend of <b>${parameters.selectedMetric.replace("_", " ")}</b> from ${parameters.yearRange[0]} to ${parameters.yearRange[1]} for selected ${parameters.selectedStatus.toLowerCase()} countries.</p>
   `);
 
   const svg = d3.select("#viz");
   const width = +svg.attr("width");
   const height = +svg.attr("height");
-  const margin = {top: 50, right: 160, bottom: 60, left: 70};
+  const margin = { top: 50, right: 200, bottom: 50, left: 70 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
+  // Filter countries by status
+  const countryList = [...new Set(dataGlobal
+    .filter(d => parameters.selectedStatus === "all" || d.status === parameters.selectedStatus)
+    .map(d => d.country))].slice(0, 5);
+
+  parameters.selectedCountries = countryList;
+
   const filtered = dataGlobal.filter(d =>
-    parameters.selectedCountries.includes(d.country) &&
-    d.year >= parameters.yearRange[0] && d.year <= parameters.yearRange[1] &&
-    !isNaN(d[parameters.selectedMetric])
+    countryList.includes(d.country) &&
+    d.year >= parameters.yearRange[0] &&
+    d.year <= parameters.yearRange[1]
   );
 
   const dataByCountry = d3.groups(filtered, d => d.country);
@@ -72,7 +91,8 @@ function renderOverview() {
     .range([0, plotWidth]);
 
   const y = d3.scaleLinear()
-    .domain(d3.extent(filtered, d => d[parameters.selectedMetric])).nice()
+    .domain(d3.extent(filtered, d => d[parameters.selectedMetric]))
+    .nice()
     .range([plotHeight, 0]);
 
   const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
@@ -102,7 +122,7 @@ function renderOverview() {
     .x(d => x(d.year))
     .y(d => y(d[parameters.selectedMetric]));
 
-  const color = d3.scaleOrdinal(d3.schemeCategory10);
+  const color = d3.scaleOrdinal(d3.schemeCategory10).domain(countryList);
 
   g.selectAll(".line")
     .data(dataByCountry)
@@ -113,50 +133,48 @@ function renderOverview() {
     .attr("stroke-width", 2)
     .attr("d", ([, values]) => line(values));
 
-  // Annotation (1 example)
-  const exampleCountry = dataByCountry[0][0];
-  const latestData = dataByCountry[0][1].find(d => d.year === parameters.yearRange[1]);
+  g.selectAll(".label")
+    .data(dataByCountry)
+    .enter()
+    .append("text")
+    .datum(([country, values]) => ({
+      country,
+      value: values[values.length - 1]
+    }))
+    .attr("transform", d => `translate(${x(d.value.year)},${y(d.value[parameters.selectedMetric])})`)
+    .attr("x", 5)
+    .attr("dy", "0.35em")
+    .style("font-size", "10px")
+    .text(d => d.country);
+
+  // === Annotations ===
+  const exampleCountry = dataByCountry[0];
+  const lastPoint = exampleCountry[1].find(d => d.year === parameters.yearRange[1]);
+
   const annotations = [
     {
       note: {
-        title: exampleCountry,
-        label: `${parameters.selectedMetric.replace("_", " ")} in ${parameters.yearRange[1]} was ${latestData[parameters.selectedMetric].toFixed(1)}`
+        title: exampleCountry[0],
+        label: `${parameters.selectedMetric.replace("_", " ")} in ${parameters.yearRange[1]}: ${lastPoint[parameters.selectedMetric]}`
       },
-      x: x(latestData.year),
-      y: y(latestData[parameters.selectedMetric]),
+      data: lastPoint,
+      dx: 20,
       dy: -30,
-      dx: 30
+      subject: { radius: 4 }
     }
   ];
 
   const makeAnnotations = d3.annotation()
     .type(d3.annotationCalloutCircle)
+    .accessors({
+      x: d => x(d.year),
+      y: d => y(d[parameters.selectedMetric])
+    })
     .annotations(annotations);
 
-  g.append("g").call(makeAnnotations);
+  g.append("g").attr("class", "annotation-group").call(makeAnnotations);
 }
 
-// === UI Triggers ===
-d3.select("#statusSelect").on("change", function() {
-  parameters.selectedStatus = this.value;
-  updateSelectedCountries();
-  renderScene(currentScene);
-});
-
-d3.select("#metricSelect").on("change", function() {
-  parameters.selectedMetric = this.value;
-  renderScene(currentScene);
-});
-
-d3.select("#nextBtn").on("click", function() {
-  currentScene = Math.min(currentScene + 1, 2);
-  renderScene(currentScene);
-});
-
-d3.select("#prevBtn").on("click", function() {
-  currentScene = Math.max(currentScene - 1, 0);
-  renderScene(currentScene);
-});
 
 
 
