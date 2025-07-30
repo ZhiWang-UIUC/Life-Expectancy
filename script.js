@@ -3,7 +3,6 @@ let currentScene = 0;
 let dataGlobal = null;
 let parameters = {
   selectedStatus: "Developed",
-  selectedMetric: "life_expectancy",
   yearRange: [2000, 2015],
   selectedCountries: []
 };
@@ -31,11 +30,6 @@ d3.select("#statusSelect").on("change", function () {
   renderScene(currentScene);
 });
 
-d3.select("#metricSelect").on("change", function () {
-  parameters.selectedMetric = this.value;
-  renderScene(currentScene);
-});
-
 // === SCENE CONTROL ===
 function renderScene(scene) {
   d3.select("#viz").selectAll("*").remove();
@@ -59,7 +53,7 @@ function renderScene(scene) {
 function renderOverview() {
   d3.select("#narrative").html(`
     <h2>Life Expectancy Trends: ${parameters.selectedStatus} Countries</h2>
-    <p>This scene shows the trend of <b>${parameters.selectedMetric.replace("_", " ")}</b> from ${parameters.yearRange[0]} to ${parameters.yearRange[1]} for selected ${parameters.selectedStatus.toLowerCase()} countries.</p>
+    <p>This scene shows how life expectancy changed from ${parameters.yearRange[0]} to ${parameters.yearRange[1]} in ${parameters.selectedStatus.toLowerCase()} countries. Overall, life expectancy has increased over time, especially in developing countries.</p>
   `);
 
   const svg = d3.select("#viz");
@@ -71,7 +65,6 @@ function renderOverview() {
 
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // Filter countries by status
   const countryList = [...new Set(dataGlobal
     .filter(d => parameters.selectedStatus === "all" || d.status === parameters.selectedStatus)
     .map(d => d.country))].slice(0, 5);
@@ -91,7 +84,7 @@ function renderOverview() {
     .range([0, plotWidth]);
 
   const y = d3.scaleLinear()
-    .domain(d3.extent(filtered, d => d[parameters.selectedMetric]))
+    .domain(d3.extent(filtered, d => d.life_expectancy))
     .nice()
     .range([plotHeight, 0]);
 
@@ -116,11 +109,11 @@ function renderOverview() {
     .attr("y", -50)
     .attr("fill", "black")
     .attr("text-anchor", "middle")
-    .text(parameters.selectedMetric.replace("_", " "));
+    .text("Life Expectancy");
 
   const line = d3.line()
     .x(d => x(d.year))
-    .y(d => y(d[parameters.selectedMetric]));
+    .y(d => y(d.life_expectancy));
 
   const color = d3.scaleOrdinal(d3.schemeCategory10).domain(countryList);
 
@@ -141,39 +134,40 @@ function renderOverview() {
       country,
       value: values[values.length - 1]
     }))
-    .attr("transform", d => `translate(${x(d.value.year)},${y(d.value[parameters.selectedMetric])})`)
+    .attr("transform", d => `translate(${x(d.value.year)},${y(d.value.life_expectancy)})`)
     .attr("x", 5)
     .attr("dy", "0.35em")
     .style("font-size", "10px")
     .text(d => d.country);
 
   // === Annotations ===
-  const exampleCountry = dataByCountry[0];
-  const lastPoint = exampleCountry[1].find(d => d.year === parameters.yearRange[1]);
-
-  const annotations = [
-    {
+  const annotations = dataByCountry.map(([country, values]) => {
+    const lastPoint = values.find(d => d.year === parameters.yearRange[1]);
+    return {
       note: {
-        title: exampleCountry[0],
-        label: `${parameters.selectedMetric.replace("_", " ")} in ${parameters.yearRange[1]}: ${lastPoint[parameters.selectedMetric]}`
+        title: country,
+        label: `Life Expectancy: ${lastPoint.life_expectancy.toFixed(1)}`
       },
       data: lastPoint,
-      dx: 20,
-      dy: -30,
+      dx: 10,
+      dy: -20,
       subject: { radius: 4 }
-    }
-  ];
+    };
+  });
 
   const makeAnnotations = d3.annotation()
     .type(d3.annotationCalloutCircle)
     .accessors({
       x: d => x(d.year),
-      y: d => y(d[parameters.selectedMetric])
+      y: d => y(d.life_expectancy)
     })
     .annotations(annotations);
 
-  g.append("g").attr("class", "annotation-group").call(makeAnnotations);
+  g.append("g")
+    .attr("class", "annotation-group")
+    .call(makeAnnotations);
 }
+
 
 
 
