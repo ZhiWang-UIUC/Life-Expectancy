@@ -148,6 +148,7 @@ function renderOverview() {
 
   // === Annotation
   // === Annotation
+/*
 const annotatedCountries = dataByCountry.slice(0, 5); 
 
 const annotations = annotatedCountries.map(([country, values], i) => {
@@ -185,7 +186,7 @@ g.append("g")
   .style("font-size", "11px") // 设置字体大小
   .call(makeAnnotations);
 
-  
+  */
 }
 
 
