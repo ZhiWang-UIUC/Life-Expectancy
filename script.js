@@ -145,42 +145,50 @@ function renderOverview() {
     .style("font-size", "10px")
     .text(d => d.country);
 
- // 选出寿命前5国家（按最后一年寿命排序）
-// 选出寿命前5国家（按最后一年寿命排序）
-const topCountries = dataByCountry
-  .map(([country, values]) => {
-    const lastValid = values
-      .filter(d => !isNaN(d.life_expectancy))
-      .sort((a, b) => b.year - a.year)[0]; // 最新年
-    return {
-      country,
-      year: lastValid?.year,
-      value: lastValid?.life_expectancy,
-      point: lastValid
-    };
-  })
-  .filter(d => d.point && !isNaN(d.value))
-  .sort((a, b) => b.value - a.value)  // 高 → 低
-  .slice(0, 5);
 
-// 固定位置 dy 值，从最上到最下：值越大位置越上
-const dyPositions = [-80, -40, 0, 40, 80];
+// 取所有国家中数据完整的，按寿命变化量排序，选前5
+  const deltaSortedCountries = dataByCountry
+    .map(([country, values]) => {
+      const sorted = values
+        .filter(d => !isNaN(d.life_expectancy))
+        .sort((a, b) => a.year - b.year);
+      if (sorted.length < 2) return null;
+  
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
+  
+      return {
+        country,
+        first,
+        last,
+        delta: +delta,
+        trend: +delta >= 0 ? "increased" : "decreased"
+      };
+    })
+    .filter(d => d !== null)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 5);
 
-const annotations = topCountries.map((d, i) => {
-  return {
+
+
+  // annotation 垂直固定偏移（从上到下）
+  const fixedDy = [-80, -40, 0, 40, 80];
+  
+  const annotations = deltaSortedCountries.map((d, i) => ({
     note: {
       title: d.country,
-      label: `Life Expectancy in ${d.year}: ${d.value.toFixed(1)}`,
-      wrap: 140,
+      label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta)} yrs from ${d.first.year} to ${d.last.year}`,
+      wrap: 160,
       padding: 3,
       align: "left"
     },
-    data: d.point,
-    dx: 60, // 所有注释向右偏移
-    dy: dyPositions[i],
+    data: d.last,
+    dx: 60,
+    dy: fixedDy[i],
     subject: { radius: 3 }
-  };
-});
+  }));
+
 
 // 调用 annotation
 const makeAnnotations = d3.annotation()
@@ -194,8 +202,6 @@ const makeAnnotations = d3.annotation()
 g.append("g")
   .attr("class", "annotation-group")
   .call(makeAnnotations);
-
-
 
 
 
