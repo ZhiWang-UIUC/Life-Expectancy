@@ -185,9 +185,6 @@ g.append("g")
   .style("font-size", "11px") // 设置字体大小
   .call(makeAnnotations);
 
-  console.log("Overview rendered with", annotations.length, "annotations");
-  console.log("Annotations:", annotations.length);
-
   
 }
 
