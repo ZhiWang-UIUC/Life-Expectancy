@@ -9,7 +9,7 @@
 
   <div id="container">
     <div id="narrative">
-      <!-- 这里放故事文本 -->
+      <!-- 故事文本 -->
     </div>
     <div id="visualization">
       <svg id="viz" width="700" height="500"></svg>
@@ -21,15 +21,7 @@
     <button id="next">Next</button>
   </div>
 
-  <!-- 引入 d3 和其他库，推荐用 CDN，方便 -->
-  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-  <script src="https://cdn.jsdelivr.net/npm/d3-annotation@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
-
-  <!-- 你的主脚本 -->
-  <script src="script.js"></script>
-
-
+  
   <div style="margin-bottom: 10px;">
   <label for="statusSelect">Country Type:</label>
   <select id="statusSelect">
@@ -47,6 +39,18 @@
     <option value="hiv_aids">HIV/AIDS</option>
   </select>
 </div>
+
+  <!-- 引入 d3 和其他库 -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://unpkg.com/d3-svg-annotation@2.5.1/d3-annotation.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+
+  
+
+  <!-- 主脚本 -->
+  <script src="script.js"></script>
+
+
 
 </body>
 </html>
