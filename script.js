@@ -147,47 +147,54 @@ function renderOverview() {
 
 
 // 取所有国家中数据完整的，按寿命变化量排序，选前5
-  const deltaSortedCountries = dataByCountry
-    .map(([country, values]) => {
-      const sorted = values
-        .filter(d => !isNaN(d.life_expectancy))
-        .sort((a, b) => a.year - b.year);
-      if (sorted.length < 2) return null;
-  
-      const first = sorted[0];
-      const last = sorted[sorted.length - 1];
-      const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
-  
-      return {
-        country,
-        first,
-        last,
-        delta: +delta,
-        trend: +delta >= 0 ? "increased" : "decreased"
-      };
-    })
-    .filter(d => d !== null)
-    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
-    .slice(0, 5);
+const numAnnotations = 5;
+const annotationX = plotWidth + 40; // 距离图表右边一定距离
+const annotationYSpacing = plotHeight / (numAnnotations + 1);
 
+// 选出最寿命变化最大的 5 个国家
+const topDeltaCountries = dataByCountry
+  .map(([country, values]) => {
+    const sorted = values
+      .filter(d => !isNaN(d.life_expectancy))
+      .sort((a, b) => a.year - b.year);
+    if (sorted.length < 2) return null;
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    const delta = (last.life_expectancy - first.life_expectancy).toFixed(1);
+    return {
+      country,
+      first,
+      last,
+      delta: +delta,
+      trend: +delta >= 0 ? "increased" : "decreased"
+    };
+  })
+  .filter(d => d !== null)
+  .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+  .slice(0, numAnnotations);
 
-
-  // annotation 垂直固定偏移（从上到下）
-  const fixedDy = [-80, -40, 0, 40, 80];
-  
-  const annotations = deltaSortedCountries.map((d, i) => ({
+// 构造 annotation 对象（固定位置）
+const annotations = topDeltaCountries.map((d, i) => {
+  const anchorY = margin.top + (i + 1) * annotationYSpacing;
+  return {
     note: {
       title: d.country,
       label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta)} yrs from ${d.first.year} to ${d.last.year}`,
       wrap: 160,
       padding: 3,
-      align: "left"
+      align: "left",
+      x: annotationX,
+      y: anchorY
     },
-    data: d.last,
-    dx: 60,
-    dy: fixedDy[i],
-    subject: { radius: 3 }
-  }));
+    data: d.last, // 连接的 anchor 点（线条）
+    subject: {
+      radius: 3
+    },
+    dx: 0,
+    dy: 0
+  };
+});
+
 
 
 // 调用 annotation
