@@ -36,7 +36,7 @@ function renderScene(scene) {
   d3.select("#narrative").html("");
 
   if (!dataGlobal) {
-    d3.select("#narrative").text("数据还没加载完成，请稍候...");
+    d3.select("#narrative").text("loading data...");
     return;
   }
 
@@ -70,6 +70,7 @@ function renderOverview() {
     .map(d => d.country))].slice(0, 5);
 
   parameters.selectedCountries = countryList;
+  parameters.selectedMetric = 'life_expectancy';
 
   const filtered = dataGlobal.filter(d =>
     countryList.includes(d.country) &&
@@ -141,32 +142,32 @@ function renderOverview() {
     .text(d => d.country);
 
   // === Annotations ===
-  const annotations = dataByCountry.map(([country, values]) => {
-    const lastPoint = values.find(d => d.year === parameters.yearRange[1]);
-    return {
-      note: {
-        title: country,
-        label: `Life Expectancy: ${lastPoint.life_expectancy.toFixed(1)}`
-      },
-      data: lastPoint,
-      dx: 10,
-      dy: -20,
-      subject: { radius: 4 }
-    };
-  });
+  const annotations = dataByCountry.slice(0, 5).map(([country, values]) => {
+  const lastPoint = values.find(d => d.year === parameters.yearRange[1]);
+  return {
+    note: {
+      title: country,
+      label: `Life Expectancy in ${parameters.yearRange[1]}: ${lastPoint.life_expectancy.toFixed(1)}`
+    },
+    data: lastPoint,
+    dx: 10,
+    dy: -25,
+    subject: { radius: 4 }
+  };
+});
 
-  const makeAnnotations = d3.annotation()
-    .type(d3.annotationCalloutCircle)
-    .accessors({
-      x: d => x(d.year),
-      y: d => y(d.life_expectancy)
-    })
-    .annotations(annotations);
+ const makeAnnotations = d3.annotation()
+  .type(d3.annotationCalloutCircle)
+  .accessors({
+    x: d => x(d.year),
+    y: d => y(d.life_expectancy)
+  })
+  .annotations(annotations);
 
-  g.append("g")
-    .attr("class", "annotation-group")
-    .call(makeAnnotations);
-}
+g.append("g")
+  .attr("class", "annotation-group")
+  .call(makeAnnotations);
+
 
 
 
