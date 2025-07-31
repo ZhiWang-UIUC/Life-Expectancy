@@ -147,10 +147,10 @@ function renderOverview() {
 
 
   // annotation
-  const numAnnotations = 5;
-  const annotationX = plotWidth + 20; // 靠近图形
-  const spacing = 40;
-  const annotationTop = 10;
+   const numAnnotations = 5;
+  const spacing = 55;                     // 注释之间垂直间距
+  const annotationTop = 40;              // 注释整体向下偏移
+  const annotationRightOffset = 140;     // 注释距离右边距离（位置更居中）
   
   const topDeltaCountries = dataByCountry
     .map(([country, values]) => {
@@ -181,14 +181,14 @@ function renderOverview() {
       note: {
         title: d.country,
         label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta).toFixed(1)} yrs from ${d.first.year} to ${d.last.year}`,
-        wrap: 120,
+        wrap: 130,
         align: "left"
       },
       data: {
         year: d.last.year,
         life_expectancy: d.last.life_expectancy
       },
-      dx: 30,
+      dx: plotWidth - anchorX - annotationRightOffset,  // 保持整体右移但不贴边
       dy: fixedY - anchorY,
       subject: { radius: 3 }
     };
@@ -205,6 +205,7 @@ function renderOverview() {
   g.append("g")
     .attr("class", "annotation-group")
     .call(makeAnnotations);
+
 
 
 
