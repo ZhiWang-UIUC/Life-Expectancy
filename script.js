@@ -48,8 +48,6 @@ function renderScene(scene) {
     renderHIVImpact();
   }
 }
-// life_expectancy 范围
-const globalLifeExpectancyExtent = d3.extent(dataGlobal, d => d.life_expectancy);
 
 
 function renderOverview() {
@@ -90,7 +88,7 @@ function renderOverview() {
     .range([0, plotWidth]);
 
   const y = d3.scaleLinear()
-    .domain([globalLifeExpectancyExtent[0] - 2, globalLifeExpectancyExtent[1] + 2])
+    .domain([35, 95])
     .range([plotHeight, 0]);
 
 
