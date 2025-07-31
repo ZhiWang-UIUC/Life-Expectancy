@@ -227,7 +227,9 @@ topDeltaCountries.forEach((d, i) => {
     .attr("x", noteX + 5)
     .attr("y", noteY + 5)
     .attr("font-size", "10px")
-    .text(`+${d.delta.toFixed(1)} yrs (${d.first.year}–${d.last.year})`);
+    .text(`life expectancy ${d.trend === 'increased' ? 'rose' : 'fell'} by ${d.delta >= 0 ? '+' : '-'}${Math.abs(d.delta).toFixed(1)} years between ${d.first.year}–${d.last.year}`);
+  
+
 });
 
 
@@ -236,6 +238,7 @@ topDeltaCountries.forEach((d, i) => {
 
 
 }
+//.text(`+${d.delta.toFixed(1)} yrs (${d.first.year}–${d.last.year})`)
 
 
 
