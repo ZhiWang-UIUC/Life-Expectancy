@@ -148,12 +148,9 @@ function renderOverview() {
 
   // annotation
   const numAnnotations = 5;
-  const estimatedBoxHeight = 60;
-  const annotationX = width - margin.right - 10; // 更靠近 chart 区域
-  
-  const totalHeight = estimatedBoxHeight * numAnnotations;
-  const annotationTop = margin.top + 10;
-  const spacing = estimatedBoxHeight;
+  const annotationX = width - margin.right - 10;
+  const spacing = 50;
+  const annotationTop = margin.top + 20;
   
   const topDeltaCountries = dataByCountry
     .map(([country, values]) => {
@@ -173,46 +170,45 @@ function renderOverview() {
       };
     })
     .filter(d => d !== null)
-    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
-    .slice(0, numAnnotations)
-    .sort((a, b) => b.last.life_expectancy - a.last.life_expectancy); // 高寿命在上
+    .sort((a, b) => b.last.life_expectancy - a.last.life_expectancy)
+    .slice(0, numAnnotations);
   
-  // 放弃 D3 自动定位，手动布局
   const annotations = topDeltaCountries.map((d, i) => {
     const fixedY = annotationTop + i * spacing;
-  
     return {
       note: {
         title: d.country,
         label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta).toFixed(1)} yrs\nfrom ${d.first.year} to ${d.last.year}`,
         wrap: 140,
         align: "left",
-        padding: 2,
+        padding: 5,
         x: annotationX,
         y: fixedY
       },
-      // 仍用真实点数据作为起点
+      // 定义数据点作为连接线终点
       data: {
         year: d.last.year,
         life_expectancy: d.last.life_expectancy
       },
       dx: annotationX - x(d.last.year),
-      dy: fixedY - y(d.last.life_expectancy) + 5, // 强制向下偏移，确保注释在数据点下方
+      dy: fixedY - y(d.last.life_expectancy),
       subject: { radius: 3 }
     };
   });
-  
+
+// annotation Label
   const makeAnnotations = d3.annotation()
-    .type(d3.annotationCalloutElbow)
-    .accessors({
-      x: d => x(d.data.year),
-      y: d => y(d.data.life_expectancy)
-    })
-    .annotations(annotations);
-  
-  g.append("g")
-    .attr("class", "annotation-group")
-    .call(makeAnnotations);
+  .type(d3.annotationLabel)
+  .accessors({
+    x: d => x(d.data.year),
+    y: d => y(d.data.life_expectancy)
+  })
+  .annotations(annotations);
+
+g.append("g")
+  .attr("class", "annotation-group")
+  .call(makeAnnotations);
+
 
 
 
