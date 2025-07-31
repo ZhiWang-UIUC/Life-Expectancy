@@ -226,7 +226,7 @@ topDeltaCountries.forEach((d, i) => {
     .attr("x", noteX + 5)
     .attr("y", noteY + 5)
     .attr("font-size", "10px")
-    .text(`life expectancy ${d.trend === 'increased' ? 'rose' : 'fell'} by ${d.delta >= 0 ? '+' : '-'}${Math.abs(d.delta).toFixed(1)} years;)
+    .text('life expectancy ${d.trend === 'increased' ? 'rose' : 'fell'} by ${d.delta >= 0 ? '+' : '-'}${Math.abs(d.delta).toFixed(1)} years')
   
 
 });
