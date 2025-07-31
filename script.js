@@ -146,9 +146,6 @@ function renderOverview() {
     .text(d => d.country);
 
 
-const numAnnotations = 5;
-const estimatedBoxHeight = 60;  // 预估每个注释高度
-const annotationX = width - margin.right - 10; // 更靠近 chart 区域
 
 const numAnnotations = 5;
 const annotationBoxWidth = 130;
