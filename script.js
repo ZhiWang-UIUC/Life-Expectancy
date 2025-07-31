@@ -148,12 +148,11 @@ function renderOverview() {
 
   // annotation
   const numAnnotations = 5;
-  const estimatedBoxHeight = 60;  // 预估每个注释高度
+  const estimatedBoxHeight = 60;
   const annotationX = width - margin.right - 10; // 更靠近 chart 区域
   
-  const totalAnnotationHeight = estimatedBoxHeight * numAnnotations;
+  const totalHeight = estimatedBoxHeight * numAnnotations;
   const annotationTop = margin.top + 10;
-  const annotationBottom = annotationTop + totalAnnotationHeight;
   const spacing = estimatedBoxHeight;
   
   const topDeltaCountries = dataByCountry
@@ -176,11 +175,12 @@ function renderOverview() {
     .filter(d => d !== null)
     .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
     .slice(0, numAnnotations)
-    .sort((a, b) => b.last.life_expectancy - a.last.life_expectancy); // 高寿命排上面
+    .sort((a, b) => b.last.life_expectancy - a.last.life_expectancy); // 高寿命在上
   
-    const annotations = topDeltaCountries.map((d, i) => {
+  // 放弃 D3 自动定位，手动布局
+  const annotations = topDeltaCountries.map((d, i) => {
     const fixedY = annotationTop + i * spacing;
-
+  
     return {
       note: {
         title: d.country,
@@ -188,31 +188,32 @@ function renderOverview() {
         wrap: 140,
         align: "left",
         padding: 2,
-        orientation: "bottom",//强制信息放在延长线下方
         x: annotationX,
         y: fixedY
       },
-      data: d.last,
+      // 仍用真实点数据作为起点
+      data: {
+        year: d.last.year,
+        life_expectancy: d.last.life_expectancy
+      },
       dx: annotationX - x(d.last.year),
-      dy: fixedY - y(d.last.life_expectancy),
+      dy: fixedY - y(d.last.life_expectancy) + 5, // 强制向下偏移，确保注释在数据点下方
       subject: { radius: 3 }
     };
   });
+  
+  const makeAnnotations = d3.annotation()
+    .type(d3.annotationCalloutElbow)
+    .accessors({
+      x: d => x(d.data.year),
+      y: d => y(d.data.life_expectancy)
+    })
+    .annotations(annotations);
+  
+  g.append("g")
+    .attr("class", "annotation-group")
+    .call(makeAnnotations);
 
-
-
-// 调用 annotation
-const makeAnnotations = d3.annotation()
-  .type(d3.annotationCalloutElbow)
-  .accessors({
-    x: d => x(d.year),
-    y: d => y(d.life_expectancy)
-  })
-  .annotations(annotations);
-
-g.append("g")
-  .attr("class", "annotation-group")
-  .call(makeAnnotations);
 
 
 
