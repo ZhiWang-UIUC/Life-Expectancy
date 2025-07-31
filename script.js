@@ -6,8 +6,6 @@ let parameters = {
   yearRange: [2000, 2015],
   selectedCountries: []
 };
-// 整个数据集的 life expectancy 范围
-const globalLifeExpectancyExtent = d3.extent(dataGlobal, d => d.life_expectancy);
 
 // === LOAD DATA ===
 d3.csv("data/life_expectancy_cleaned.csv").then(data => {
@@ -50,6 +48,9 @@ function renderScene(scene) {
     renderHIVImpact();
   }
 }
+// life_expectancy 范围
+const globalLifeExpectancyExtent = d3.extent(dataGlobal, d => d.life_expectancy);
+
 
 function renderOverview() {
   d3.select("#narrative").html(`
@@ -89,8 +90,9 @@ function renderOverview() {
     .range([0, plotWidth]);
 
   const y = d3.scaleLinear()
-  .domain([globalLifeExpectancyExtent[0] - 2, globalLifeExpectancyExtent[1] + 2])
-  .range([plotHeight, 0]);
+    .domain([globalLifeExpectancyExtent[0] - 2, globalLifeExpectancyExtent[1] + 2])
+    .range([plotHeight, 0]);
+
 
   const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
   const yAxis = d3.axisLeft(y);
@@ -226,7 +228,7 @@ topDeltaCountries.forEach((d, i) => {
     .attr("x", noteX + 5)
     .attr("y", noteY + 5)
     .attr("font-size", "10px")
-    .text(`life expectancy ${d.trend === 'increased' ? 'rose' : 'fell'} by ${d.delta >= 0 ? '+' : '-'}${Math.abs(d.delta).toFixed(1)} years;
+    .text(`life expectancy ${d.trend === 'increased' ? 'rose' : 'fell'} by ${d.delta >= 0 ? '+' : '-'}${Math.abs(d.delta).toFixed(1)} years;)
   
 
 });
