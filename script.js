@@ -188,6 +188,7 @@ function renderOverview() {
         wrap: 140,
         align: "left",
         padding: 2,
+        orientation: "bottom",//强制信息放在延长线下方
         x: annotationX,
         y: fixedY
       },
