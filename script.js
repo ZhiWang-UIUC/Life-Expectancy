@@ -148,9 +148,9 @@ function renderOverview() {
 
   // annotation
    const numAnnotations = 5;
-  const spacing = 55;                     // 注释之间垂直间距
-  const annotationTop = 40;              // 注释整体向下偏移
-  const annotationRightOffset = 140;     // 注释距离右边距离（位置更居中）
+  const spacing = 60;  // 注释之间的间距
+  const annotationStartY = 50;  // 从图的顶部偏移开始
+  const annotationBoxX = plotWidth + 10;  // 注释框固定在图的右边
   
   const topDeltaCountries = dataByCountry
     .map(([country, values]) => {
@@ -170,26 +170,28 @@ function renderOverview() {
       };
     })
     .filter(d => d !== null)
+    .sort((a, b) => b.last.life_expectancy - a.last.life_expectancy)
     .slice(0, numAnnotations);
   
+  // === 构造 Annotation 对象，使用固定位置 ===
   const annotations = topDeltaCountries.map((d, i) => {
-    const fixedY = annotationTop + i * spacing;
-    const anchorX = x(d.last.year);
-    const anchorY = y(d.last.life_expectancy);
-  
+    const fixedY = annotationStartY + i * spacing;
     return {
       note: {
         title: d.country,
         label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta).toFixed(1)} yrs from ${d.first.year} to ${d.last.year}`,
-        wrap: 130,
-        align: "left"
+        wrap: 140,
+        align: "left",
+        padding: 5
       },
+      x: annotationBoxX,
+      y: fixedY,
       data: {
         year: d.last.year,
         life_expectancy: d.last.life_expectancy
       },
-      dx: plotWidth - anchorX - annotationRightOffset,  // 保持整体右移但不贴边
-      dy: fixedY - anchorY,
+      dx: annotationBoxX - x(d.last.year),
+      dy: fixedY - y(d.last.life_expectancy),
       subject: { radius: 3 }
     };
   });
@@ -197,8 +199,12 @@ function renderOverview() {
   const makeAnnotations = d3.annotation()
     .type(d3.annotationLabel)
     .accessors({
-      x: d => x(d.year),
-      y: d => y(d.life_expectancy)
+      x: d => d.x,
+      y: d => d.y
+    })
+    .accessorsInverse({
+      x: d => d.x,
+      y: d => d.y
     })
     .annotations(annotations);
   
