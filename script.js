@@ -148,56 +148,56 @@ function renderOverview() {
 
   // annotation
   const numAnnotations = 5;
-  const annotationX = width - margin.right - 10;
-  const spacing = 50;
-  const annotationTop = margin.top + 20;
-  
-  const topDeltaCountries = dataByCountry
-    .map(([country, values]) => {
-      const sorted = values
-        .filter(d => !isNaN(d.life_expectancy))
-        .sort((a, b) => a.year - b.year);
-      if (sorted.length < 2) return null;
-      const first = sorted[0];
-      const last = sorted[sorted.length - 1];
-      const delta = last.life_expectancy - first.life_expectancy;
-      return {
-        country,
-        first,
-        last,
-        delta,
-        trend: delta >= 0 ? "increased" : "decreased"
-      };
-    })
-    .filter(d => d !== null)
-    .sort((a, b) => b.last.life_expectancy - a.last.life_expectancy)
-    .slice(0, numAnnotations);
-  
-  const annotations = topDeltaCountries.map((d, i) => {
-    const fixedY = annotationTop + i * spacing;
-    return {
-      note: {
-        title: d.country,
-        label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta).toFixed(1)} yrs\nfrom ${d.first.year} to ${d.last.year}`,
-        wrap: 140,
-        align: "left",
-        padding: 5,
-        x: annotationX,
-        y: fixedY
-      },
-      // 定义数据点作为连接线终点
-      data: {
-        year: d.last.year,
-        life_expectancy: d.last.life_expectancy
-      },
-      dx: annotationX - x(d.last.year),
-      dy: fixedY - y(d.last.life_expectancy),
-      subject: { radius: 3 }
-    };
-  });
+const annotationX = width - margin.right - 10;
+const spacing = 50;
+const annotationTop = margin.top + 20;
 
-// annotation Label
-  const makeAnnotations = d3.annotation()
+const topDeltaCountries = dataByCountry
+  .map(([country, values]) => {
+    const sorted = values
+      .filter(d => !isNaN(d.life_expectancy))
+      .sort((a, b) => a.year - b.year);
+    if (sorted.length < 2) return null;
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    const delta = last.life_expectancy - first.life_expectancy;
+    return {
+      country,
+      first,
+      last,
+      delta,
+      trend: delta >= 0 ? "increased" : "decreased"
+    };
+  })
+  .filter(d => d !== null)
+  .sort((a, b) => b.last.life_expectancy - a.last.life_expectancy)
+  .slice(0, numAnnotations);
+
+const annotations = topDeltaCountries.map((d, i) => {
+  const fixedY = annotationTop + i * spacing;
+  return {
+    note: {
+      title: d.country,
+      label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta).toFixed(1)} yrs\nfrom ${d.first.year} to ${d.last.year}`,
+      wrap: 140,
+      align: "left",
+      padding: 5,
+      x: annotationX,
+      y: fixedY
+    },
+    // 定义数据点作为连接线终点
+    data: {
+      year: d.last.year,
+      life_expectancy: d.last.life_expectancy
+    },
+    dx: annotationX - x(d.last.year),
+    dy: fixedY - y(d.last.life_expectancy),
+    subject: { radius: 3 }
+  };
+});
+
+
+const makeAnnotations = d3.annotation()
   .type(d3.annotationLabel)
   .accessors({
     x: d => x(d.data.year),
@@ -208,6 +208,7 @@ function renderOverview() {
 g.append("g")
   .attr("class", "annotation-group")
   .call(makeAnnotations);
+
 
 
 
