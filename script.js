@@ -146,55 +146,57 @@ function renderOverview() {
     .text(d => d.country);
 
 
+  // annotation
+  const numAnnotations = 5;
+  const estimatedBoxHeight = 60;  // 预估每个注释高度
+  const annotationX = width - margin.right - 10; // 更靠近 chart 区域
+  
+  const totalAnnotationHeight = estimatedBoxHeight * numAnnotations;
+  const annotationTop = margin.top + 10;
+  const annotationBottom = annotationTop + totalAnnotationHeight;
+  const spacing = estimatedBoxHeight;
+  
+  const topDeltaCountries = dataByCountry
+    .map(([country, values]) => {
+      const sorted = values
+        .filter(d => !isNaN(d.life_expectancy))
+        .sort((a, b) => a.year - b.year);
+      if (sorted.length < 2) return null;
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const delta = last.life_expectancy - first.life_expectancy;
+      return {
+        country,
+        first,
+        last,
+        delta,
+        trend: delta >= 0 ? "increased" : "decreased"
+      };
+    })
+    .filter(d => d !== null)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, numAnnotations)
+    .sort((a, b) => b.last.life_expectancy - a.last.life_expectancy); // 高寿命排上面
+  
+    const annotations = topDeltaCountries.map((d, i) => {
+    const fixedY = annotationTop + i * spacing;
 
-const numAnnotations = 5;
-const annotationBoxWidth = 130;
-const annotationX = width - margin.right - 60; // 更靠左，避免被裁切
-const estimatedBoxHeight = 60;
-const annotationTop = margin.top + 10;
-const spacing = estimatedBoxHeight;
-
-const topDeltaCountries = dataByCountry
-  .map(([country, values]) => {
-    const sorted = values
-      .filter(d => !isNaN(d.life_expectancy))
-      .sort((a, b) => a.year - b.year);
-    if (sorted.length < 2) return null;
-    const first = sorted[0];
-    const last = sorted[sorted.length - 1];
-    const delta = last.life_expectancy - first.life_expectancy;
     return {
-      country,
-      first,
-      last,
-      delta,
-      trend: delta >= 0 ? "increased" : "decreased"
+      note: {
+        title: d.country,
+        label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta).toFixed(1)} yrs\nfrom ${d.first.year} to ${d.last.year}`,
+        wrap: 140,
+        align: "left",
+        padding: 2,
+        x: annotationX,
+        y: fixedY
+      },
+      data: d.last,
+      dx: annotationX - x(d.last.year),
+      dy: fixedY - y(d.last.life_expectancy),
+      subject: { radius: 3 }
     };
-  })
-  .filter(d => d !== null)
-  .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
-  .slice(0, numAnnotations)
-  .sort((a, b) => b.last.life_expectancy - a.last.life_expectancy); // 高寿命排上
-
-const annotations = topDeltaCountries.map((d, i) => {
-  const fixedY = annotationTop + i * spacing;
-
-  return {
-    note: {
-      title: d.country,
-      label: `Life Expectancy ${d.trend} by ${Math.abs(d.delta).toFixed(1)} yrs\nfrom ${d.first.year} to ${d.last.year}`,
-      wrap: annotationBoxWidth - 10,
-      align: "left",
-      padding: 2,
-      x: annotationX,
-      y: fixedY
-    },
-    data: d.last,
-    dx: annotationX - x(d.last.year),  // 连线的 dx
-    dy: fixedY - y(d.last.life_expectancy),  // 连线的 dy
-    subject: { radius: 3 }
-  };
-});
+  });
 
 
 
