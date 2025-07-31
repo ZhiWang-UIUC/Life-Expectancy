@@ -196,21 +196,40 @@ function renderOverview() {
     };
   });
   
-  const makeAnnotations = d3.annotation()
-    .type(d3.annotationLabel)
-    .accessors({
-      x: d => d.x,
-      y: d => d.y
-    })
-    .accessorsInverse({
-      x: d => d.x,
-      y: d => d.y
-    })
-    .annotations(annotations);
-  
-  g.append("g")
-    .attr("class", "annotation-group")
-    .call(makeAnnotations);
+  const annotationGroup = g.append("g").attr("class", "manual-annotations");
+
+topDeltaCountries.forEach((d, i) => {
+  const noteY = annotationStartY + i * spacing;
+  const noteX = plotWidth + 20;
+
+  const dataX = x(d.last.year);
+  const dataY = y(d.last.life_expectancy);
+
+  // 画连接线
+  annotationGroup.append("line")
+    .attr("x1", dataX)
+    .attr("y1", dataY)
+    .attr("x2", noteX)
+    .attr("y2", noteY)
+    .attr("stroke", "gray")
+    .attr("stroke-dasharray", "2,2");
+
+  // 注释标题
+  annotationGroup.append("text")
+    .attr("x", noteX + 5)
+    .attr("y", noteY - 10)
+    .attr("font-weight", "bold")
+    .attr("font-size", "11px")
+    .text(d.country);
+
+  // 注释正文
+  annotationGroup.append("text")
+    .attr("x", noteX + 5)
+    .attr("y", noteY + 5)
+    .attr("font-size", "10px")
+    .text(`+${d.delta.toFixed(1)} yrs (${d.first.year}–${d.last.year})`);
+});
+
 
 
 
