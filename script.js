@@ -30,7 +30,14 @@ d3.csv("data/life_expectancy_cleaned.csv").then(data => {
 d3.select("#statusSelect").on("change", function () {
   parameters.selectedStatus = this.value;
   renderScene(currentScene);
+
 });
+
+d3.select("#countrySelectScene2").on("change", function () {
+  parameters.selectedCountryForScene2 = this.value;
+  renderScene(1);
+});
+
 
 // === SCENE CONTROL ===
 function renderScene(scene) {
