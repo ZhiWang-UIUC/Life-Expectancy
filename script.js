@@ -5,9 +5,44 @@ let parameters = {
   selectedStatus: "Developed",
   yearRange: [2000, 2015],
   selectedCountries: [],
-  selectedCountryForScene2: "China"
+  selectedCountryForScene2: "China",
+  selectedCountryForScene3: "India",
+  selectedMetricForScene3: "gdp",
 
 };
+
+function initControls() {
+  // Scene 1: Select country type
+  d3.select("#scene1-controls").html(`
+    <label>Status:
+      <select id="statusSelect">
+        <option value="Developed">Developed</option>
+        <option value="Developing">Developing</option>
+      </select>
+    </label>
+  `);
+  d3.select("#statusSelect").on("change", function () {
+    parameters.selectedStatus = this.value;
+    renderScene(1);
+  });
+
+  // Scene 2: Select a single country
+  const countries = Array.from(new Set(dataGlobal.map(d => d.country))).sort();
+  d3.select("#scene2-controls").html(`
+    <label>Country:
+      <select id="countrySelectScene2">
+        ${countries.map(c => `<option value="${c}">${c}</option>`).join("")}
+      </select>
+    </label>
+  `);
+  d3.select("#countrySelectScene2").on("change", function () {
+    parameters.selectedCountryForScene2 = this.value;
+    renderScene(2);
+  });
+
+  // Scene 3 控件可以以后扩展（多变量探索）
+}
+
 
 // === LOAD DATA ===
 d3.csv("data/life_expectancy_cleaned.csv").then(data => {
@@ -21,6 +56,7 @@ d3.csv("data/life_expectancy_cleaned.csv").then(data => {
     d.schooling = +d.schooling;
   });
   dataGlobal = data;
+  initControls();
   renderScene(currentScene);
 }).catch(err => {
   console.error("加载数据失败", err);
@@ -43,6 +79,11 @@ d3.select("#countrySelectScene2").on("change", function () {
 function renderScene(scene) {
   d3.select("#viz").selectAll("*").remove();
   d3.select("#narrative").html("");
+
+  //  UI display
+  d3.selectAll("#scene-controls > div").style("display", "none");
+  d3.select(`#scene${scene}-controls`).style("display", "block");
+
 
   if (!dataGlobal) {
     d3.select("#narrative").text("loading data...");
