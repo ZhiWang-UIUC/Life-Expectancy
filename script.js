@@ -258,7 +258,7 @@ topDeltaCountries.forEach((d, i) => {
 function renderGDPTrend() {
   d3.select("#narrative").html(`
     <h2>Economic Growth and Life Expectancy in ${parameters.selectedCountryForScene2}</h2>
-    <p>This scene explores how GDP growth and life expectancy evolved together in ${parameters.selectedCountryForScene2} between ${parameters.yearRange[0]} and ${parameters.yearRange[1]}. In many countries, increasing economic output is accompanied by improvements in public health and longevity.</p>
+    <p>This scene explores how GDP growth and life expectancy evolved together in ${parameters.selectedCountryForScene2} between ${parameters.yearRange[0]} and ${parameters.yearRange[1]}. In many countries, rising economic output is accompanied by improvements in public health and longevity.</p>
   `);
 
   const svg = d3.select("#viz");
@@ -281,11 +281,11 @@ function renderGDPTrend() {
     .range([0, plotWidth]);
 
   const y1 = d3.scaleLinear()
-    .domain([40, 90]) // fixed for Life Expectancy
+    .domain([40, 90])  // 固定 y1 轴范围和 Scene 1 一致
     .range([plotHeight, 0]);
 
   const y2 = d3.scaleLinear()
-    .domain([0, d3.max(filtered, d => d.gdp) * 1.1])
+    .domain([0, d3.max(dataGlobal, d => d.gdp) * 1.05]) // 用全局最大 GDP 保持统一对比
     .range([plotHeight, 0]);
 
   const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
@@ -321,8 +321,9 @@ function renderGDPTrend() {
     .attr("y", 50)
     .attr("fill", "black")
     .attr("text-anchor", "middle")
-    .text("GDP per capita");
+    .text("GDP per Capita");
 
+  // 折线图样式保持一致
   const lineLife = d3.line()
     .x(d => x(d.year))
     .y(d => y1(d.life_expectancy));
@@ -345,59 +346,60 @@ function renderGDPTrend() {
     .attr("stroke-width", 2)
     .attr("d", lineGDP);
 
-  // 注释：显示 GDP 与寿命改善趋势
-  const last = filtered[filtered.length - 1];
+  // 注释
   const first = filtered[0];
+  const last = filtered[filtered.length - 1];
 
-  const noteX = plotWidth + 20;
-  const spacing = 80;
   const annotationGroup = g.append("g").attr("class", "manual-annotations");
 
-  // 寿命注释
+  const annotationBoxX = plotWidth + 20;
+  const annotationStartY = 60;
+  const spacing = 70;
+
+  // 注释 1: Life Expectancy
   annotationGroup.append("line")
     .attr("x1", x(last.year))
     .attr("y1", y1(last.life_expectancy))
-    .attr("x2", noteX)
-    .attr("y2", 60)
+    .attr("x2", annotationBoxX)
+    .attr("y2", annotationStartY)
     .attr("stroke", "gray")
     .attr("stroke-dasharray", "2,2");
 
   annotationGroup.append("text")
-    .attr("x", noteX + 5)
-    .attr("y", 50)
+    .attr("x", annotationBoxX + 5)
+    .attr("y", annotationStartY - 10)
     .attr("font-weight", "bold")
     .text("Life Expectancy");
 
   annotationGroup.append("text")
-    .attr("x", noteX + 5)
-    .attr("y", 65)
+    .attr("x", annotationBoxX + 5)
+    .attr("y", annotationStartY + 5)
     .attr("font-size", "10px")
-    .text(`+${(last.life_expectancy - first.life_expectancy).toFixed(1)} years over 15 years`);
+    .text(`Improved by +${(last.life_expectancy - first.life_expectancy).toFixed(1)} yrs`);
 
-  // GDP 注释
+  // 注释 2: GDP
   annotationGroup.append("line")
     .attr("x1", x(last.year))
     .attr("y1", y2(last.gdp))
-    .attr("x2", noteX)
-    .attr("y2", 140)
+    .attr("x2", annotationBoxX)
+    .attr("y2", annotationStartY + spacing)
     .attr("stroke", "gray")
     .attr("stroke-dasharray", "2,2");
 
   annotationGroup.append("text")
-    .attr("x", noteX + 5)
-    .attr("y", 130)
+    .attr("x", annotationBoxX + 5)
+    .attr("y", annotationStartY + spacing - 10)
     .attr("font-weight", "bold")
     .attr("fill", "orange")
     .text("GDP per Capita");
 
   annotationGroup.append("text")
-    .attr("x", noteX + 5)
-    .attr("y", 145)
+    .attr("x", annotationBoxX + 5)
+    .attr("y", annotationStartY + spacing + 5)
     .attr("font-size", "10px")
-    .text(`+${((last.gdp - first.gdp) / 1000).toFixed(1)}K USD over 15 years`);
-
-  
+    .text(`Increased by +${((last.gdp - first.gdp) / 1000).toFixed(1)}k USD`);
 }
+
 
 
 // Scene 2: Other Impact
