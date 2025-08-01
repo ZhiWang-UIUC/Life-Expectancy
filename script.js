@@ -40,7 +40,32 @@ function initControls() {
     renderScene(2);
   });
 
-  // Scene 3 控件可以以后扩展（多变量探索）
+  // Scene 3: 自由探索视图控件
+  d3.select("#scene3-controls").html(`
+    <label>Country:
+      <select id="countrySelectScene3">
+        ${countries.map(c => `<option value="${c}">${c}</option>`).join("")}
+      </select>
+    </label>
+    <label>Metric:
+      <select id="metricSelectScene3">
+        <option value="gdp">GDP</option>
+        <option value="alcohol">Alcohol Consumption</option>
+        <option value="hiv_aids">HIV/AIDS Death Rate</option>
+        <option value="schooling">Schooling</option>
+      </select>
+    </label>
+  `);
+  
+  d3.select("#countrySelectScene3").on("change", function () {
+    parameters.selectedCountryForScene3 = this.value;
+    renderScene(3);
+  });
+  d3.select("#metricSelectScene3").on("change", function () {
+    parameters.selectedMetricForScene3 = this.value;
+    renderScene(3);
+  });
+
 }
 
 
@@ -542,49 +567,64 @@ function renderGDPTrend() {
 
 
 // Scene 2: Other Impact
-function renderUserExplore() {
+function renderExplorer() {
+  const country = parameters.selectedCountryForScene3;
+  const metric = parameters.selectedMetricForScene3;
+  const metricLabelMap = {
+    gdp: "GDP per Capita",
+    alcohol: "Alcohol Consumption (liters)",
+    hiv_aids: "HIV/AIDS Death Rate",
+    schooling: "Years of Schooling"
+  };
+
   d3.select("#narrative").html(`
-    <h2>Other Impact on Life Expectancy</h2>
-    <p>This scene shows how Other prevalence impacts life expectancy.</p>
+    <h2>Exploring ${country}: Life Expectancy vs. ${metricLabelMap[metric]}</h2>
+    <p>This scene allows you to explore how life expectancy relates to <strong>${metricLabelMap[metric]}</strong> in ${country} from ${parameters.yearRange[0]} to ${parameters.yearRange[1]}. Observe whether both improved in parallel or diverged.</p>
   `);
 
   const svg = d3.select("#viz");
   const width = +svg.attr("width");
   const height = +svg.attr("height");
-  const margin = {top: 50, right: 40, bottom: 60, left: 70};
+  const margin = { top: 50, right: 200, bottom: 50, left: 70 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // 过滤数据
-  const filtered = dataGlobal.filter(d => d.hiv_aids >= 0 && d.life_expectancy > 0);
+  const filtered = dataGlobal.filter(d =>
+    d.country === country &&
+    d.year >= parameters.yearRange[0] &&
+    d.year <= parameters.yearRange[1]
+  );
 
-  // X 轴 - HIV/AIDS prevalence
   const x = d3.scaleLinear()
-    .domain(d3.extent(filtered, d => d.hiv_aids))
-    .range([0, plotWidth])
-    .nice();
+    .domain(parameters.yearRange)
+    .range([0, plotWidth]);
 
-  // Y 轴 - Life expectancy
-  const y = d3.scaleLinear()
-    .domain(d3.extent(filtered, d => d.life_expectancy))
-    .range([plotHeight, 0])
-    .nice();
+  const y1 = d3.scaleLinear()
+    .domain([40, 90])  // 与前面统一
+    .range([plotHeight, 0]);
 
-  // 轴
+  const y2 = d3.scaleLinear()
+    .domain([0, d3.max(dataGlobal, d => d[metric]) * 1.05])
+    .range([plotHeight, 0]);
+
+  const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
+  const yAxisLeft = d3.axisLeft(y1);
+  const yAxisRight = d3.axisRight(y2);
+
   g.append("g")
     .attr("transform", `translate(0,${plotHeight})`)
-    .call(d3.axisBottom(x))
+    .call(xAxis)
     .append("text")
     .attr("x", plotWidth / 2)
     .attr("y", 40)
     .attr("fill", "black")
     .attr("text-anchor", "middle")
-    .text("HIV/AIDS prevalence");
+    .text("Year");
 
   g.append("g")
-    .call(d3.axisLeft(y))
+    .call(yAxisLeft)
     .append("text")
     .attr("transform", "rotate(-90)")
     .attr("x", -plotHeight / 2)
@@ -593,49 +633,87 @@ function renderUserExplore() {
     .attr("text-anchor", "middle")
     .text("Life Expectancy");
 
-  // 点
-  g.selectAll("circle")
-    .data(filtered)
-    .enter()
-    .append("circle")
-    .attr("cx", d => x(d.hiv_aids))
-    .attr("cy", d => y(d.life_expectancy))
-    .attr("r", 5)
-    .attr("fill", "red")
-    .attr("opacity", 0.7)
-    .append("title")
-    .text(d => `${d.country}\nHIV/AIDS: ${d.hiv_aids}\nLife Expectancy: ${d.life_expectancy}`);
-
-  // 注释
-  const annotations = [
-    {
-      note: { label: "Higher HIV/AIDS prevalence strongly correlates with lower life expectancy" },
-      x: x(15),
-      y: y(55),
-      dy: -30,
-      dx: 30
-    }
-  ];
-
-  const makeAnnotations = d3.annotation()
-    .annotations(annotations);
-
   g.append("g")
-    .attr("class", "annotation-group")
-    .call(makeAnnotations);
+    .attr("transform", `translate(${plotWidth},0)`)
+    .call(yAxisRight)
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -plotHeight / 2)
+    .attr("y", 50)
+    .attr("fill", "black")
+    .attr("text-anchor", "middle")
+    .text(metricLabelMap[metric]);
+
+  const lineLife = d3.line()
+    .x(d => x(d.year))
+    .y(d => y1(d.life_expectancy));
+
+  const lineMetric = d3.line()
+    .x(d => x(d.year))
+    .y(d => y2(d[metric]));
+
+  g.append("path")
+    .datum(filtered)
+    .attr("fill", "none")
+    .attr("stroke", "steelblue")
+    .attr("stroke-width", 2)
+    .attr("d", lineLife);
+
+  g.append("path")
+    .datum(filtered)
+    .attr("fill", "none")
+    .attr("stroke", "darkorange")
+    .attr("stroke-width", 2)
+    .attr("d", lineMetric);
+
+  // === 注释 ===
+  const first = filtered[0];
+  const last = filtered[filtered.length - 1];
+  const annotationGroup = g.append("g");
+
+  const annotationBoxX = plotWidth + 20;
+  const annotationStartY = 60;
+  const spacing = 70;
+
+  annotationGroup.append("line")
+    .attr("x1", x(last.year))
+    .attr("y1", y1(last.life_expectancy))
+    .attr("x2", annotationBoxX)
+    .attr("y2", annotationStartY)
+    .attr("stroke", "gray")
+    .attr("stroke-dasharray", "2,2");
+
+  annotationGroup.append("text")
+    .attr("x", annotationBoxX + 5)
+    .attr("y", annotationStartY - 10)
+    .attr("font-weight", "bold")
+    .text("Life Expectancy");
+
+  annotationGroup.append("text")
+    .attr("x", annotationBoxX + 5)
+    .attr("y", annotationStartY + 5)
+    .attr("font-size", "10px")
+    .text(`+${(last.life_expectancy - first.life_expectancy).toFixed(1)} yrs`);
+
+  annotationGroup.append("line")
+    .attr("x1", x(last.year))
+    .attr("y1", y2(last[metric]))
+    .attr("x2", annotationBoxX)
+    .attr("y2", annotationStartY + spacing)
+    .attr("stroke", "gray")
+    .attr("stroke-dasharray", "2,2");
+
+  annotationGroup.append("text")
+    .attr("x", annotationBoxX + 5)
+    .attr("y", annotationStartY + spacing - 10)
+    .attr("font-weight", "bold")
+    .attr("fill", "darkorange")
+    .text(metricLabelMap[metric]);
+
+  annotationGroup.append("text")
+    .attr("x", annotationBoxX + 5)
+    .attr("y", annotationStartY + spacing + 5)
+    .attr("font-size", "10px")
+    .text(`${metricLabelMap[metric]} ↑ by ${((last[metric] - first[metric]) || 0).toFixed(1)}`);
 }
 
-// 按钮事件绑定
-document.getElementById("prev").addEventListener("click", () => {
-  if (currentScene > 0) {
-    currentScene--;
-    renderScene(currentScene);
-  }
-});
-
-document.getElementById("next").addEventListener("click", () => {
-  if (currentScene < 2) {
-    currentScene++;
-    renderScene(currentScene);
-  }
-});
