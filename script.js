@@ -87,9 +87,16 @@ function renderOverview() {
     .domain(parameters.yearRange)
     .range([0, plotWidth]);
 
+  //const y = d3.scaleLinear()
+ //   .domain([35, 95])
+ //   .range([plotHeight, 0]);
   const y = d3.scaleLinear()
-    .domain([35, 95])
+    .domain([
+      d3.min(filtered, d => d.life_expectancy) - 2,
+      d3.max(filtered, d => d.life_expectancy) + 2
+    ])
     .range([plotHeight, 0]);
+
 
 
   const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
@@ -226,9 +233,9 @@ topDeltaCountries.forEach((d, i) => {
     .attr("x", noteX + 5)
     .attr("y", noteY + 5)
     .attr("font-size", "10px")
-    .text('life expectancy ${d.trend === 'increased' ? 'rose' : 'fell'} by ${d.delta >= 0 ? '+' : '-'}${Math.abs(d.delta).toFixed(1)} years')
-  
+    .text(`life expectancy ${d.trend === 'increased' ? 'rose' : 'fell'} by ${d.delta >= 0 ? '+' : '-'}${Math.abs(d.delta).toFixed(1)} year`)
 
+  
 });
 
 
