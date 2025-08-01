@@ -12,65 +12,34 @@
       <!-- 故事文本 -->
     </div>
     <div id="visualization">
-      <svg id="viz" width="700" height="500"></svg>
+      <svg id="viz" width="800" height="500"></svg>
     </div>
   </div>
 
+  <!-- 控制按钮 -->
   <div id="controls">
     <button id="prev">Previous</button>
     <button id="next">Next</button>
   </div>
 
-  <!-- Scene-specific controls -->
-<div id="scene-controls">
-  <div id="scene0-controls"></div>
-  <div id="scene1-controls" style="display:none;"></div>
-  <div id="scene2-controls" style="display:none;"></div>
-  <div id="scene3-controls" style="display:none;"></div>
-</div>
+  <!-- 场景对应控件（由 JS 动态控制显示）-->
+  <div id="scene-controls">
+    <div id="scene0-controls"></div>
+    <div id="scene1-controls" style="display:none;"></div>
+    <div id="scene2-controls" style="display:none;"></div>
+    <div id="scene3-controls" style="display:none;"></div>
+  </div>
 
-  <!-- Visualization SVG -->
-  <svg id="viz" width="800" height="500"></svg>
-  <div id="narrative"></div>
-
-
-  
-  <div style="margin-bottom: 10px;">
-  <label for="statusSelect">Country Type:</label>
-  <select id="statusSelect">
-    <option value="Developed">Developed</option>
-    <option value="Developing">Developing</option>
-  </select>
-
-  <select id="countrySelectScene2">
-    <option value="China">China</option>
-    <option value="India">India</option>
-    <option value="United States">United States</option>
-    <option value="Brazil">Brazil</option>
-    <option value="Nigeria">Nigeria</option>
-  </select>
-
-
-  <label for="metricSelect">Metric:</label>
-  <select id="metricSelect" style="display:none">
-    <option value="life_expectancy">Life Expectancy</option>
-    <option value="gdp">GDP</option>
-  </select>
-</div>
-
-  <!-- 引入 d3 和其他库 -->
-
-  <!-- <script src="https://d3js.org/d3.v5.min.js"></script> -->
+  <!-- D3 和其他脚本库 -->
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script src="https://unpkg.com/d3-svg-annotation@2.5.1/d3-annotation.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 
-  
-
-  <!-- 主脚本 -->
+  <!-- 主 JS -->
   <script src="script.js"></script>
 
 
-
+  
 </body>
 </html>
+
