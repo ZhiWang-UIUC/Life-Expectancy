@@ -76,14 +76,13 @@ d3.select("#countrySelectScene2").on("change", function () {
 
 
 // === SCENE CONTROL ===
+
 function renderScene(scene) {
   d3.select("#viz").selectAll("*").remove();
   d3.select("#narrative").html("");
 
-  //  UI display
   d3.selectAll("#scene-controls > div").style("display", "none");
   d3.select(`#scene${scene}-controls`).style("display", "block");
-
 
   if (!dataGlobal) {
     d3.select("#narrative").text("loading data...");
@@ -91,15 +90,114 @@ function renderScene(scene) {
   }
 
   if (scene === 0) {
-    renderOverview();
+    renderIntro();  
   } else if (scene === 1) {
-    renderGDPTrend();
+    renderOverview();
   } else if (scene === 2) {
-    renderHIVImpact();
+    renderGDPTrend();
+  } else if (scene === 3) {
+    renderExplorer();
   }
 }
 
+// scene 0 
+function renderIntro() {
+  d3.select("#narrative").html(`
+    <h2>Global Life Expectancy Over Time</h2>
+    <p>Life expectancy around the world has improved significantly over the past few decades. In this introductory scene, we look at the global average trend to set the stage for deeper exploration of regional and economic factors.</p>
+  `);
 
+  const svg = d3.select("#viz");
+  const width = +svg.attr("width");
+  const height = +svg.attr("height");
+  const margin = { top: 50, right: 200, bottom: 50, left: 70 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+
+  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // 聚合为每年平均寿命
+  const globalAvg = d3.rollups(
+    dataGlobal.filter(d => !isNaN(d.life_expectancy)),
+    v => d3.mean(v, d => d.life_expectancy),
+    d => d.year
+  ).map(([year, avg]) => ({ year: +year, life_expectancy: +avg }))
+   .sort((a, b) => a.year - b.year);
+
+  const x = d3.scaleLinear()
+    .domain(d3.extent(globalAvg, d => d.year))
+    .range([0, plotWidth]);
+
+  const y = d3.scaleLinear()
+    .domain([d3.min(globalAvg, d => d.life_expectancy) - 2,
+             d3.max(globalAvg, d => d.life_expectancy) + 2])
+    .range([plotHeight, 0]);
+
+  const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
+  const yAxis = d3.axisLeft(y);
+
+  g.append("g")
+    .attr("transform", `translate(0,${plotHeight})`)
+    .call(xAxis)
+    .append("text")
+    .attr("x", plotWidth / 2)
+    .attr("y", 40)
+    .attr("fill", "black")
+    .attr("text-anchor", "middle")
+    .text("Year");
+
+  g.append("g")
+    .call(yAxis)
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -plotHeight / 2)
+    .attr("y", -50)
+    .attr("fill", "black")
+    .attr("text-anchor", "middle")
+    .text("Global Life Expectancy");
+
+  const line = d3.line()
+    .x(d => x(d.year))
+    .y(d => y(d.life_expectancy));
+
+  g.append("path")
+    .datum(globalAvg)
+    .attr("fill", "none")
+    .attr("stroke", "purple")
+    .attr("stroke-width", 2)
+    .attr("d", line);
+
+  // === annotation ===
+  const first = globalAvg[0];
+  const last = globalAvg[globalAvg.length - 1];
+
+  const annotationBoxX = plotWidth + 20;
+  const annotationY = 80;
+
+  const annotationGroup = g.append("g").attr("class", "intro-annotation");
+
+  annotationGroup.append("line")
+    .attr("x1", x(last.year))
+    .attr("y1", y(last.life_expectancy))
+    .attr("x2", annotationBoxX)
+    .attr("y2", annotationY)
+    .attr("stroke", "gray")
+    .attr("stroke-dasharray", "2,2");
+
+  annotationGroup.append("text")
+    .attr("x", annotationBoxX + 5)
+    .attr("y", annotationY - 10)
+    .attr("font-weight", "bold")
+    .text("Global Trend");
+
+  annotationGroup.append("text")
+    .attr("x", annotationBoxX + 5)
+    .attr("y", annotationY + 5)
+    .attr("font-size", "10px")
+    .text(`+${(last.life_expectancy - first.life_expectancy).toFixed(1)} yrs (${first.year}–${last.year})`);
+}
+
+//scens 1
 function renderOverview() {
   d3.select("#narrative").html(`
     <h2>Life Expectancy Trends: ${parameters.selectedStatus} Countries</h2>
