@@ -4,7 +4,9 @@ let dataGlobal = null;
 let parameters = {
   selectedStatus: "Developed",
   yearRange: [2000, 2015],
-  selectedCountries: []
+  selectedCountries: [],
+  selectedCountryForScene2: "China"
+
 };
 
 // === LOAD DATA ===
@@ -43,7 +45,7 @@ function renderScene(scene) {
   if (scene === 0) {
     renderOverview();
   } else if (scene === 1) {
-    renderAlcoholImpact();
+    renderGDPTrend();
   } else if (scene === 2) {
     renderHIVImpact();
   }
@@ -239,61 +241,62 @@ topDeltaCountries.forEach((d, i) => {
 });
 
 
-
-
-
-
 }
-//.text(`+${d.delta.toFixed(1)} yrs (${d.first.year}–${d.last.year})`)
 
 
 
 
 
 // Scene 1: GDP Impact
-function renderGDPImpact() {
+function renderGDPTrend() {
   d3.select("#narrative").html(`
-    <h2>GDP Impact vs Life Expectancy</h2>
-    <p>This scene explores the relationship between GDP and life expectancy.</p>
+    <h2>Economic Growth and Life Expectancy in ${parameters.selectedCountryForScene2}</h2>
+    <p>This scene explores how GDP growth and life expectancy evolved together in ${parameters.selectedCountryForScene2} between ${parameters.yearRange[0]} and ${parameters.yearRange[1]}. In many countries, increasing economic output is accompanied by improvements in public health and longevity.</p>
   `);
 
   const svg = d3.select("#viz");
   const width = +svg.attr("width");
   const height = +svg.attr("height");
-  const margin = {top: 50, right: 40, bottom: 60, left: 70};
+  const margin = { top: 50, right: 200, bottom: 50, left: 70 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // 过滤数据
-  const filtered = dataGlobal.filter(d => d.alcohol >= 0 && d.life_expectancy > 0);
+  const filtered = dataGlobal.filter(d =>
+    d.country === parameters.selectedCountryForScene2 &&
+    d.year >= parameters.yearRange[0] &&
+    d.year <= parameters.yearRange[1]
+  );
 
-  // X 轴 - Alcohol consumption
   const x = d3.scaleLinear()
-    .domain(d3.extent(filtered, d => d.alcohol))
-    .range([0, plotWidth])
-    .nice();
+    .domain(parameters.yearRange)
+    .range([0, plotWidth]);
 
-  // Y 轴 - Life expectancy
-  const y = d3.scaleLinear()
-    .domain(d3.extent(filtered, d => d.life_expectancy))
-    .range([plotHeight, 0])
-    .nice();
+  const y1 = d3.scaleLinear()
+    .domain([40, 90]) // fixed for Life Expectancy
+    .range([plotHeight, 0]);
 
-  // 轴
+  const y2 = d3.scaleLinear()
+    .domain([0, d3.max(filtered, d => d.gdp) * 1.1])
+    .range([plotHeight, 0]);
+
+  const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
+  const yAxisLeft = d3.axisLeft(y1);
+  const yAxisRight = d3.axisRight(y2);
+
   g.append("g")
     .attr("transform", `translate(0,${plotHeight})`)
-    .call(d3.axisBottom(x))
+    .call(xAxis)
     .append("text")
     .attr("x", plotWidth / 2)
     .attr("y", 40)
     .attr("fill", "black")
     .attr("text-anchor", "middle")
-    .text("Alcohol Consumption (liters per capita)");
+    .text("Year");
 
   g.append("g")
-    .call(d3.axisLeft(y))
+    .call(yAxisLeft)
     .append("text")
     .attr("transform", "rotate(-90)")
     .attr("x", -plotHeight / 2)
@@ -302,37 +305,93 @@ function renderGDPImpact() {
     .attr("text-anchor", "middle")
     .text("Life Expectancy");
 
-  // 点
-  g.selectAll("circle")
-    .data(filtered)
-    .enter()
-    .append("circle")
-    .attr("cx", d => x(d.alcohol))
-    .attr("cy", d => y(d.life_expectancy))
-    .attr("r", 5)
-    .attr("fill", "orange")
-    .attr("opacity", 0.7)
-    .append("title")
-    .text(d => `${d.country}\nAlcohol: ${d.alcohol}\nLife Expectancy: ${d.life_expectancy}`);
-
-  // 简单注释
-  const annotations = [
-    {
-      note: { label: "Some countries with higher alcohol consumption have lower life expectancy" },
-      x: x(10),
-      y: y(65),
-      dy: -30,
-      dx: 30
-    }
-  ];
-
-  const makeAnnotations = d3.annotation()
-    .annotations(annotations);
-
   g.append("g")
-    .attr("class", "annotation-group")
-    .call(makeAnnotations);
+    .attr("transform", `translate(${plotWidth},0)`)
+    .call(yAxisRight)
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -plotHeight / 2)
+    .attr("y", 50)
+    .attr("fill", "black")
+    .attr("text-anchor", "middle")
+    .text("GDP per capita");
+
+  const lineLife = d3.line()
+    .x(d => x(d.year))
+    .y(d => y1(d.life_expectancy));
+
+  const lineGDP = d3.line()
+    .x(d => x(d.year))
+    .y(d => y2(d.gdp));
+
+  g.append("path")
+    .datum(filtered)
+    .attr("fill", "none")
+    .attr("stroke", "steelblue")
+    .attr("stroke-width", 2)
+    .attr("d", lineLife);
+
+  g.append("path")
+    .datum(filtered)
+    .attr("fill", "none")
+    .attr("stroke", "orange")
+    .attr("stroke-width", 2)
+    .attr("d", lineGDP);
+
+  // 注释：显示 GDP 与寿命改善趋势
+  const last = filtered[filtered.length - 1];
+  const first = filtered[0];
+
+  const noteX = plotWidth + 20;
+  const spacing = 80;
+  const annotationGroup = g.append("g").attr("class", "manual-annotations");
+
+  // 寿命注释
+  annotationGroup.append("line")
+    .attr("x1", x(last.year))
+    .attr("y1", y1(last.life_expectancy))
+    .attr("x2", noteX)
+    .attr("y2", 60)
+    .attr("stroke", "gray")
+    .attr("stroke-dasharray", "2,2");
+
+  annotationGroup.append("text")
+    .attr("x", noteX + 5)
+    .attr("y", 50)
+    .attr("font-weight", "bold")
+    .text("Life Expectancy");
+
+  annotationGroup.append("text")
+    .attr("x", noteX + 5)
+    .attr("y", 65)
+    .attr("font-size", "10px")
+    .text(`+${(last.life_expectancy - first.life_expectancy).toFixed(1)} years over 15 years`);
+
+  // GDP 注释
+  annotationGroup.append("line")
+    .attr("x1", x(last.year))
+    .attr("y1", y2(last.gdp))
+    .attr("x2", noteX)
+    .attr("y2", 140)
+    .attr("stroke", "gray")
+    .attr("stroke-dasharray", "2,2");
+
+  annotationGroup.append("text")
+    .attr("x", noteX + 5)
+    .attr("y", 130)
+    .attr("font-weight", "bold")
+    .attr("fill", "orange")
+    .text("GDP per Capita");
+
+  annotationGroup.append("text")
+    .attr("x", noteX + 5)
+    .attr("y", 145)
+    .attr("font-size", "10px")
+    .text(`+${((last.gdp - first.gdp) / 1000).toFixed(1)}K USD over 15 years`);
+
+  
 }
+
 
 // Scene 2: Other Impact
 function renderUserExplore() {
