@@ -87,17 +87,6 @@ d3.csv("data/life_expectancy_cleaned.csv").then(data => {
   console.error("加载数据失败", err);
 });
 
-// === UI TRIGGERS ===
-d3.select("#statusSelect").on("change", function () {
-  parameters.selectedStatus = this.value;
-  renderScene(currentScene);
-
-});
-
-d3.select("#countrySelectScene2").on("change", function () {
-  parameters.selectedCountryForScene2 = this.value;
-  renderScene(1);
-});
 
 
 // === SCENE CONTROL ===
