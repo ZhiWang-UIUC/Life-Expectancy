@@ -340,7 +340,7 @@ function renderOverview() {
 
 
   // annotation
-   const numAnnotations = 5;
+  const numAnnotations = 5;
   const spacing = 60;  // 注释之间的间距
   const annotationStartY = 50;  // 从图的顶部偏移开始
   const annotationBoxX = plotWidth + 10;  // 注释框固定在图的右边
@@ -544,13 +544,14 @@ function renderGDPTrend() {
     .attr("stroke-dasharray", "2,2");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 5)
+    .attr("x", annotationBoxX + 15)
     .attr("y", annotationStartY - 10)
     .attr("font-weight", "bold")
+    .attr("font-size", "11px")
     .text("Life Expectancy");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 5)
+    .attr("x", annotationBoxX + 15)
     .attr("y", annotationStartY + 5)
     .attr("font-size", "10px")
     .text(`Improved by +${(last.life_expectancy - first.life_expectancy).toFixed(1)} yrs`);
@@ -565,14 +566,15 @@ function renderGDPTrend() {
     .attr("stroke-dasharray", "2,2");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 5)
+    .attr("x", annotationBoxX + 15)
     .attr("y", annotationStartY + spacing - 10)
     .attr("font-weight", "bold")
     .attr("fill", "orange")
+    .attr("font-size", "11px")
     .text("GDP per Capita");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 5)
+    .attr("x", annotationBoxX + 15)
     .attr("y", annotationStartY + spacing + 5)
     .attr("font-size", "10px")
     .text(`Increased by +${((last.gdp - first.gdp) / 1000).toFixed(1)}k USD`);
@@ -698,13 +700,14 @@ function renderExplorer() {
     .attr("stroke-dasharray", "2,2");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 5)
+    .attr("x", annotationBoxX + 15)
     .attr("y", annotationStartY - 10)
     .attr("font-weight", "bold")
+    .attr("font-size", "11px")
     .text("Life Expectancy");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 5)
+    .attr("x", annotationBoxX + 15)
     .attr("y", annotationStartY + 5)
     .attr("font-size", "10px")
     .text(`+${(last.life_expectancy - first.life_expectancy).toFixed(1)} yrs`);
@@ -718,14 +721,15 @@ function renderExplorer() {
     .attr("stroke-dasharray", "2,2");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 5)
+    .attr("x", annotationBoxX + 15)
     .attr("y", annotationStartY + spacing - 10)
     .attr("font-weight", "bold")
     .attr("fill", "darkorange")
+    .attr("font-size", "11px")
     .text(metricLabelMap[metric]);
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 5)
+    .attr("x", annotationBoxX + 15)
     .attr("y", annotationStartY + spacing + 5)
     .attr("font-size", "10px")
     .text(`${metricLabelMap[metric]} ↑ by ${((last[metric] - first[metric]) || 0).toFixed(1)}`);
