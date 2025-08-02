@@ -123,7 +123,32 @@ function renderScene(scene) {
   } else if (scene === 3) {
     renderExplorer();
   }
+
+  updateButtonStates();
+
 }
+
+// === BUTTON EVENT HANDLERS ===
+d3.select("#prev").on("click", () => {
+  if (currentScene > 0) {
+    currentScene -= 1;
+    renderScene(currentScene);
+  }
+});
+
+d3.select("#next").on("click", () => {
+  if (currentScene < 3) {
+    currentScene += 1;
+    renderScene(currentScene);
+  }
+});
+
+// 按钮状态更新
+function updateButtonStates() {
+  d3.select("#prev").attr("disabled", currentScene === 0 ? true : null);
+  d3.select("#next").attr("disabled", currentScene === 3 ? true : null);
+}
+
 
 // scene 0 
 function renderIntro() {
