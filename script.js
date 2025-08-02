@@ -544,14 +544,14 @@ function renderGDPTrend() {
     .attr("stroke-dasharray", "2,2");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 20)
+    .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY - 10)
     .attr("font-weight", "bold")
     .attr("font-size", "11px")
     .text("Life Expectancy");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 20)
+    .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + 5)
     .attr("font-size", "10px")
     .text(`Improved by +${(last.life_expectancy - first.life_expectancy).toFixed(1)} yrs`);
@@ -566,7 +566,7 @@ function renderGDPTrend() {
     .attr("stroke-dasharray", "2,2");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 20)
+    .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + spacing - 10)
     .attr("font-weight", "bold")
     .attr("fill", "orange")
@@ -574,7 +574,7 @@ function renderGDPTrend() {
     .text("GDP per Capita");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 20)
+    .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + spacing + 5)
     .attr("font-size", "10px")
     .text(`Increased by +${((last.gdp - first.gdp) / 1000).toFixed(1)}k USD`);
@@ -692,36 +692,36 @@ function renderExplorer() {
   const spacing = 70;
 
   annotationGroup.append("line")
-    .attr("x1", x(last.year))
-    .attr("y1", y1(last.life_expectancy))
+    .attr("x1", x(first.year))
+    .attr("y1", y1(first.life_expectancy))
     .attr("x2", annotationBoxX)
     .attr("y2", annotationStartY)
     .attr("stroke", "gray")
     .attr("stroke-dasharray", "2,2");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 20)
+    .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY - 10)
     .attr("font-weight", "bold")
     .attr("font-size", "11px")
     .text("Life Expectancy");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 20)
+    .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + 5)
     .attr("font-size", "10px")
     .text(`+${(last.life_expectancy - first.life_expectancy).toFixed(1)} yrs`);
 
   annotationGroup.append("line")
-    .attr("x1", x(last.year))
-    .attr("y1", y2(last[metric]))
+    .attr("x1", x(first.year))
+    .attr("y1", y2(first[metric]))
     .attr("x2", annotationBoxX)
     .attr("y2", annotationStartY + spacing)
     .attr("stroke", "gray")
     .attr("stroke-dasharray", "2,2");
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 20)
+    .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + spacing - 10)
     .attr("font-weight", "bold")
     .attr("fill", "darkorange")
@@ -729,7 +729,7 @@ function renderExplorer() {
     .text(metricLabelMap[metric]);
 
   annotationGroup.append("text")
-    .attr("x", annotationBoxX + 20)
+    .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + spacing + 5)
     .attr("font-size", "10px")
     .text(`${metricLabelMap[metric]} ↑ by ${((last[metric] - first[metric]) || 0).toFixed(1)}`);
