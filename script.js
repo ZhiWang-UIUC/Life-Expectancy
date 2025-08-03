@@ -11,6 +11,17 @@ let parameters = {
 
 };
 
+function getMetricUnit(metric) {
+  switch(metric) {
+    case "gdp": return "USD";
+    case "alcohol": return "liters";
+    case "hiv_aids": return "deaths";
+    case "schooling": return "yrs";
+    default: return "";
+  }
+}
+
+
 function initControls() {
   // Scene 1: Select country type
   d3.select("#scene1-controls").html(`
@@ -554,7 +565,7 @@ function renderGDPTrend() {
     .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + 5)
     .attr("font-size", "10px")
-    .text(`Changed by ${(first.life_expectancy - last.life_expectancy ).toFixed(1)} yrs`);
+    .text(`${(first.life_expectancy - last.life_expectancy >= 0 ? "+" : "")}${(first.life_expectancy - last.life_expectancy).toFixed(1)} yrs`);
 
   // 注释 2: GDP
   annotationGroup.append("line")
@@ -577,7 +588,8 @@ function renderGDPTrend() {
     .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + spacing + 5)
     .attr("font-size", "10px")
-    .text(`Changed by ${((first.gdp - last.gdp) / 1000).toFixed(1)}k USD`);
+    .text(`${((first.gdp - last.gdp) >= 0 ? "+" : "")}${((first.gdp - last.gdp) / 1000).toFixed(1)}k USD`);
+
 }
 
 
@@ -710,7 +722,7 @@ function renderExplorer() {
     .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + 5)
     .attr("font-size", "10px")
-    .text(`${(first.life_expectancy - last.life_expectancy).toFixed(1)} yrs`);
+    .text(`${(first.life_expectancy - last.life_expectancy >= 0 ? "+" : "")}${(first.life_expectancy - last.life_expectancy).toFixed(1)} yrs`);
 
   annotationGroup.append("line")
     .attr("x1", x(first.year))
@@ -732,7 +744,8 @@ function renderExplorer() {
     .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + spacing + 5)
     .attr("font-size", "10px")
-    .text(`changed by ${((first[metric] - last[metric]) || 0).toFixed(1)}`);
+    .text(`${((first[metric] - last[metric]) >= 0 ? "+" : "")}${((first[metric] - last[metric]) || 0).toFixed(1)} ${getMetricUnit(metric)}`);
+
 
 }
 
