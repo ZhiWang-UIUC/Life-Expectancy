@@ -554,7 +554,7 @@ function renderGDPTrend() {
     .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + 5)
     .attr("font-size", "10px")
-    .text(`Improved by +${(last.life_expectancy - first.life_expectancy).toFixed(1)} yrs`);
+    .text(`Changed by ${(last.life_expectancy - first.life_expectancy).toFixed(1)} yrs`);
 
   // 注释 2: GDP
   annotationGroup.append("line")
@@ -577,7 +577,7 @@ function renderGDPTrend() {
     .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + spacing + 5)
     .attr("font-size", "10px")
-    .text(`Increased by +${((last.gdp - first.gdp) / 1000).toFixed(1)}k USD`);
+    .text(`Changed by ${((last.gdp - first.gdp) / 1000).toFixed(1)}k USD`);
 }
 
 
@@ -710,7 +710,7 @@ function renderExplorer() {
     .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + 5)
     .attr("font-size", "10px")
-    .text(`+${(last.life_expectancy - first.life_expectancy).toFixed(1)} yrs`);
+    .text(`${(last.life_expectancy - first.life_expectancy).toFixed(1)} yrs`);
 
   annotationGroup.append("line")
     .attr("x1", x(first.year))
@@ -732,6 +732,7 @@ function renderExplorer() {
     .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + spacing + 5)
     .attr("font-size", "10px")
-    .text(`${metricLabelMap[metric]} ↑ by ${((last[metric] - first[metric]) || 0).toFixed(1)}`);
+    .text(`${metricLabelMap[metric]} changed by ${((last[metric] - first[metric]) || 0).toFixed(1)}`);
+
 }
 
