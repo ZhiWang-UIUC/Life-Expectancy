@@ -710,7 +710,7 @@ function renderExplorer() {
     .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + 5)
     .attr("font-size", "10px")
-    .text(`${(first.life_expectancy - last.life_expectancy - ).toFixed(1)} yrs`);
+    .text(`${(first.life_expectancy - last.life_expectancy).toFixed(1)} yrs`);
 
   annotationGroup.append("line")
     .attr("x1", x(first.year))
