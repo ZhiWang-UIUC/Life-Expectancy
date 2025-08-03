@@ -732,7 +732,7 @@ function renderExplorer() {
     .attr("x", annotationBoxX + 25)
     .attr("y", annotationStartY + spacing + 5)
     .attr("font-size", "10px")
-    .text(`${metricLabelMap[metric]} changed by ${((last[metric] - first[metric]) || 0).toFixed(1)}`);
+    .text(`changed by ${((last[metric] - first[metric]) || 0).toFixed(1)}`);
 
 }
 
